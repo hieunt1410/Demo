@@ -25,7 +25,7 @@ class TrainDataset(Dataset):
         
         while len(all_b) < self.neg_sample + 1:
             neg_b = np.random.randint(self.num_bundles)
-            if self.ub_graph[u, neg_b] == 0 and neg_b not in self.ub_graph[u]:
+            if self.ub_graph[u, neg_b] == 0 and neg_b not in all_b:
                 all_b.append(neg_b)
         
         return torch.LongTensor([u]), torch.LongTensor(all_b)
