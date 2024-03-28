@@ -140,3 +140,6 @@ def test(model, dataloader, conf, tau=1.0):
             metrics[m][topk] = res[0] / res[1]
 
     return metrics
+
+if __name__ == '__main__':
+    main()
