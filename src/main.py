@@ -56,7 +56,7 @@ def main():
         model.train(True)
         pbar = tqdm(enumerate(dataset.train_loader), total=len(dataset.train_loader))
         cur_instance_num, loss_avg, bpr_loss_avg, c_loss_avg = 0., 0., 0., 0.
-        mult = epoch / conf['epoch']
+        mult = epoch / conf['epochs']
         psi = conf['max_temp'] ** mult
         
         for batch_i, batch in pbar:
