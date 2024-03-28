@@ -136,7 +136,7 @@ class Demo(nn.Module):
         self.bundle_agg_graph_ori = to_tensor(bi_graph).to(device)
         
     def one_propagate(self, graph, Afeat, Bfeat):
-        feats = torch.cat((Afeat, Bfeat), dim=1)
+        feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
         for i in range(self.num_layers):
