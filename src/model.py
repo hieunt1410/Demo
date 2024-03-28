@@ -225,7 +225,7 @@ class Demo(nn.Module):
         bundles_gamma = torch.tanh(self.bundle_freq / psi)
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                  
-        bpr_loss, c_loss = sel.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
         
         return bpr_loss, c_loss
         
