@@ -47,7 +47,7 @@ def main():
     torch.manual_seed(2024)
     np.random.seed(2024)
     
-    model = Demo(conf).to(device)
+    model = Demo(conf, dataset.graphs, dataset.bundles_freq).to(device)
     optimizer = optim.Adam(model.parameters(), lr=conf['lr'], weight_decay=conf['lambda2'])
     topk_ = conf['topk_valid']
     best_vld_rec, best_vld_ndcg, best_content = 0, 0, ''
