@@ -52,7 +52,7 @@ def main():
     topk_ = conf['topk_valid']
     best_vld_rec, best_vld_ndcg, best_content = 0, 0, ''
     
-    for epoch in range(1, conf['epoch']+1):
+    for epoch in range(1, conf['epochs']+1):
         model.train(True)
         pbar = tqdm(enumerate(dataset.train_loader), total=len(dataset.train_loader))
         cur_instance_num, loss_avg, bpr_loss_avg, c_loss_avg = 0., 0., 0., 0.
