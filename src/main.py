@@ -81,7 +81,7 @@ def main():
             
         if epoch % conf['test_interval'] == 0:
             metrics = {}
-            metrics['val'] =test(model, dataset.val_loader, conf, psi)
+            metrics['val'] = test(model, dataset.val_loader, conf, psi)
             metrics['test'] = test(model, dataset.test_loader, conf, psi)
             content = form_content(epoch, metrics['val'], metrics['test'], conf['topk'])
             print(content)
