@@ -153,9 +153,9 @@ class Demo(nn.Module):
     
     def get_aff_bundle_rep(self, aff_items_feat, test):
         if test:
-            aff_bundle_feat = self.bundle_agg_graph_ori @ self.aff_items_feat
+            aff_bundle_feat = self.bundle_agg_graph_ori @ aff_items_feat
         else:
-            aff_bundle_feat = self.bundle_agg_graph @ self.aff_items_feat
+            aff_bundle_feat = self.bundle_agg_graph @ aff_items_feat
     
     def propagate(self, test=False):
         if test:
