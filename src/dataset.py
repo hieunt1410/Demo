@@ -70,7 +70,7 @@ class Datasets():
         
         ub_pairs_train, ub_graph_train = self.get_ub('train')
         ub_pairs_val, ub_graph_val = self.get_ub('tune')
-        ub_pairs_teset, ub_graph_test = self.get_ub('test')
+        ub_pairs_test, ub_graph_test = self.get_ub('test')
         
         self.bundle_train_data = TrainDataset(conf, ub_pairs_train, ub_graph_train, self.num_bundles)
         self.bundle_val_data = TestDataset(ub_pairs_val, ub_graph_val, ub_graph_train, self.num_users, self.num_bundles)
