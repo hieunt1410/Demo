@@ -38,19 +38,27 @@ class Demo(nn.Module):
     def __init__(self, conf, raw_graph, bundles_freq):
         super(Demo, self).__init__()
         self.conf = conf
-        self.device = conf.device
-        self.embedding_size = conf.embedding_size
-        self.l2_norm = conf.lambda2
-        self.num_users = conf.num_users
-        self.num_bundles = conf.num_bundles
-        self.num_items = conf.num_items
-        self.num_layers = conf.num_layers
+        self.device = conf['device']
+        self.embedding_size = conf['embedding_size']
+        self.l2_norm = conf['lambda2']
+        self.num_users = conf['num_users']
+        self.num_bundles = conf['num_bundles']
+        self.num_items = conf['num_items']
+        self.num_layers = conf['num_layers']
         
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
         self.init_embed()
         
         self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
+        
+        self.get_aff_graph()
+        self.get_hist_graph()
+        self.get_agg_graph()
+        
+        self.get_aff_graph_ori()
+        self.get_hist_graph_ori()
+        self.get_agg_graph_ori()
         
     def init_embed(self):
         self.users_feat = nn.Parameter(torch.FloatTensor(self.num_users, self.embedding_size))

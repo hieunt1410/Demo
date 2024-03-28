@@ -59,10 +59,10 @@ class Datasets():
     Model datasets
     """
     def __init__(self, conf):
-        self.path = conf.data_path
-        self.name = conf.dataset
-        bsz_train = conf.batch_size_train
-        bsz_test = conf.batch_size_test
+        self.path = conf['data_path']
+        self.name = conf['dataset']
+        bsz_train = conf['batch_size_train']
+        bsz_test = conf['batch_size_test']
         
         self.num_users, self.num_bundles, self.num_items = self.get_data_size()
         
