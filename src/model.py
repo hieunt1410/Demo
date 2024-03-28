@@ -75,7 +75,7 @@ class Demo(nn.Module):
     def get_aff_graph(self):
         ui_graph = self.ui_graph
         device = self.device
-        modification_ratio = self.conf.aff_ed_ratio
+        modification_ratio = self.conf['aff_ed_ratio']
         
         item_level_graph = sp.bmat([[sp.csr_matrix((ui_graph.shape[0], ui_graph.shape[0])), ui_graph], [ui_graph.T, sp.csr_matrix((ui_graph.shape[1], ui_graph.shape[1]))]])
         if modification_ratio:
@@ -95,7 +95,7 @@ class Demo(nn.Module):
     def get_hist_graph(self):
         ub_graph = self.ub_graph
         device = self.device
-        modification_ratio = self.conf.hist_ed_ratio
+        modification_ratio = self.conf['hist_ed_ratio']
         
         bundle_level_graph = sp.bmat([[sp.csr_matrix((ub_graph.shape[0], ub_graph.shape[0])), ub_graph], [ub_graph.T, sp.csr_matrix((ub_graph.shape[1], ub_graph.shape[1]))]])
         
@@ -117,7 +117,7 @@ class Demo(nn.Module):
     def get_agg_graph(self):
         bi_graph = self.bi_graph
         device = self.device
-        modification_ratio = self.conf.agg_ed_ratio
+        modification_ratio = self.conf['agg_ed_ratio']
         
         graph = bi_graph.tocoo()
         values = np_edge_dropout(graph.data, modification_ratio)
