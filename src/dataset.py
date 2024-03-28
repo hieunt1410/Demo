@@ -46,7 +46,7 @@ class TestDataset(Dataset):
         self.bundles = torch.arange(num_bundles, dtype=torch.long)
         
     def __len__(self):
-        return ub_graph.shape[0]
+        return self.ub_graph.shape[0]
         
     def __getitem__(self, idx):
         ub_grd = torch.from_numpy(self.ub_graph[idx].toarray()).squeeze()
