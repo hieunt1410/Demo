@@ -206,7 +206,7 @@ class Demo(nn.Module):
         
         return bpr_loss, c_loss
     
-    def forward(self, batch, ED_drop, psi=1.):
+    def forward(self, batch, ED_dropout, psi=1.):
         if ED_drop:
             self.get_aff_graph()
             self.get_hist_graph()
