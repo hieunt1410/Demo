@@ -23,7 +23,7 @@ def get_cmd():
     return args
 
 def main():
-    conf = yaml.safe_load(open('configs/config.yaml', 'r'))
+    conf = yaml.safe_load(open('../configs/config.yaml', 'r'))
     print('Config file loaded')
     
     params = get_cmd().__dict__
