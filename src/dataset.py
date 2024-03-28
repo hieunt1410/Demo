@@ -65,6 +65,24 @@ class Datasets():
         bsz_test = conf['batch_size_test']
         
         self.num_users, self.num_bundles, self.num_items = self.get_data_size()
+        bi_graph = self.get_bi()
+        ui_pairs, ui_graph = self.get_ui()
+        
+        ub_pairs_train, ub_graph_train = self.get_ub('train')
+        ub_pairs_val, ub_graph_val = self.get_ub('tune')
+        ub_pairs_teset, ub_graph_test = self.get_ub('test')
+        
+        self.bundle_train_data = TrainDataset(conf, ub_pairs_train, ub_graph_train, self.num_bundles)
+        self.bundle_val_data = TestDataset(ub_pairs_val, ub_graph_val, ub_graph_train, self.num_users, self.num_bundles)
+        self.bundle_test_data = TestDataset(ub_pairs_test, ub_graph_test, ub_graph_train, self.num_users, self.num_bundles)
+        
+        self.graphs = [ub_graph_train, ui_graph, bi_graph]
+        
+        self.train_loader = DataLoader(self.bundle_train_data, batch_size=bsz_train, shuffle=True)
+        self.val_loader = DataLoader(self.bundle_val_data, batch_size=bsz_test, shuffle=False)
+        self.test_loader = DataLoader(self.bundle_test_data, batch_size=bsz_test, shuffle=False)
+        
+        self.bundles_freq = np.asarray(ub_graph_train.sum(axis=0)).squeeze()
         
     def get_data_size(self):
         name = self.name
