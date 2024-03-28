@@ -160,6 +160,7 @@ class Demo(nn.Module):
     def propagate(self, test=False):
         if test:
             aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat)
+            
         else:
             aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat)
             
@@ -167,6 +168,8 @@ class Demo(nn.Module):
             hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph_ori, self.users_feat, self.bundles_feat)
         else:
             hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph, self.users_feat, self.bundles_feat)
+            
+        aff_bundles_feat = self.get_aff_bundle_rep(aff_items_feat, test)
         
         users_feat = [aff_users_feat, hist_users_feat]
         bundles_feat = [aff_bundles_feat, hist_bundles_feat]
