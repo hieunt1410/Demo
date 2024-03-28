@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 import scipy.sparse as sp
 import numpy as np
 
-class TrainDataset(dataset):
+class TrainDataset(Dataset):
     """
     Class of training dataset
     """
