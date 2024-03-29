@@ -3,12 +3,12 @@ import torch
 def get_metrics(metrics, grd, pred, ks):
     tmp = {"recall": {}, "ndcg": {}}
     for k in ks:
-        _, col_indices = torch.topk(pred, topk)
+        _, col_indices = torch.topk(pred, k)
         row_indices = torch.zeros_like(col_indices) + torch.arange(pred.shape[0], device=pred.device, dtype=torch.long).view(-1, 1)
-        is_hit = grd[row_indices.view(-1).to('cpu'), col_indices.view(-1).to('cpu')].view(-1, topk)
+        is_hit = grd[row_indices.view(-1).to('cpu'), col_indices.view(-1).to('cpu')].view(-1, k)
         
-        tmp["recall"][k] = get_recall(pred, grd, is_hit, topk)
-        tmp["ndcg"][k] = get_ndcg(pred, grd, is_hit, topk)
+        tmp["recall"][k] = get_recall(pred, grd, is_hit, k)
+        tmp["ndcg"][k] = get_ndcg(pred, grd, is_hit, k)
         
 def get_recall(pred, grd, is_hit, topk):
     epsipon = 1e-8
