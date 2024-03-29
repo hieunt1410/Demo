@@ -1,3 +1,5 @@
+import torch
+
 def get_metrics(metrics, grd, pred, ks):
     tmp = {"recall": {}, "ndcg": {}}
     for k in ks:
