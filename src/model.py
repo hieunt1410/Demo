@@ -234,7 +234,7 @@ class Demo(nn.Module):
         aff_users_feat, hist_users_feat = [i[users] for i in users_feat]
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         bundle_gamma = torch.tanh(self.bundle_freq / psi)
-        aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma).unsqueeze(1)
+        aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
         hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
         scores = aff_bundles_feat @ aff_bundles_feat_.T + hist_bundles_feat @ hist_bundles_feat_.T
         
