@@ -189,7 +189,7 @@ class Demo(nn.Module):
     def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
-        aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma).unsqueeze(2)
+        aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma.unsqueeze(2))
         hist_bundles_feat_ = hist_bundles_feat * bundles_gamma.unsqueeze(2)
         
         pred = torch.sum(aff_bundles_feat * aff_bundles_feat_, 2) + torch.sum(hist_bundles_feat * hist_bundles_feat_, 2)
