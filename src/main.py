@@ -89,7 +89,9 @@ def main():
                 best_vld_rec = metrics['val']['recall'][topk_]
                 best_vld_ndcg = metrics['val']['ndcg'][topk_]
                 best_content = content
-                torch.save(model.state_dict(), f'./models/{conf["model"]}_{conf["dataset"]}.pth')
+                if not os.path.exists('../models'):
+                    os.makedirs('../models')
+                torch.save(model.state_dict(), f'../models/{conf["model"]}_{conf["dataset"]}.pth')
     
     print('-'*20, 'Best Result', '-'*20)
     print(best_content)
