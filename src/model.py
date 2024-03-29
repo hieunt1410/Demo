@@ -236,6 +236,6 @@ class Demo(nn.Module):
         bundle_gamma = torch.tanh(self.bundle_freq / psi)
         aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
         hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
-        scores = aff_bundles_feat @ aff_bundles_feat_.t() + hist_bundles_feat @ hist_bundles_feat_.t()
+        scores = torch.mm(aff_bundles_feat, aff_bundles_feat_.T) + torch.mm(hist_bundles_feat @ hist_bundles_feat_.T)
         
         return scores
