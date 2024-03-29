@@ -147,7 +147,7 @@ class Demo(nn.Module):
         all_feats = torch.stack(all_feats, dim=1)
         all_feats = torch.sum(all_feats, dim=1).squeeze(1)
         
-        Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]))
+        Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
         return Afeat, Bfeat
     
@@ -224,7 +224,7 @@ class Demo(nn.Module):
         bundles_embedding = [i[bundles] for i in bundles_feat]
         bundles_gamma = torch.tanh(self.bundle_freq / psi)
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
-                                                                 
+                                                                
         bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
         
         return bpr_loss, c_loss
