@@ -10,6 +10,8 @@ def get_metrics(metrics, grd, pred, ks):
         tmp["recall"][k] = get_recall(pred, grd, is_hit, k)
         tmp["ndcg"][k] = get_ndcg(pred, grd, is_hit, k)
         
+    return tmp
+
 def get_recall(pred, grd, is_hit, topk):
     epsipon = 1e-8
     hit_cnt = is_hit.sum(dim = 1)
