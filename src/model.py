@@ -60,6 +60,8 @@ class Demo(nn.Module):
         self.get_hist_graph_ori()
         self.get_agg_graph_ori()
         
+        self.init_md_dropouts()
+        
     def init_md_dropouts(self):
         self.item_level_dropout = nn.Dropout(0.2, True)    
         self.bundle_level_dropout = nn.Dropout(0.4, True)
