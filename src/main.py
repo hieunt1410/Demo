@@ -100,7 +100,7 @@ def moving_avg(avg, cur_num, add_value_avg, add_num):
     return (avg * cur_num + add_value_avg * add_num) / (cur_num + add_num)
 
 def form_content(epoch, val_results, test_results, ks):
-    content = f'     Epoch|  Rec@{ks[0]} |  Rec@{ks[1]} |  Rec@{ks[2]} |  Rec@{ks[3]} |' \
+    content = f'  Epoch  |  Rec@{ks[0]} |  Rec@{ks[1]} |  Rec@{ks[2]} |  Rec@{ks[3]} |' \
              f' nDCG@{ks[0]} | nDCG@{ks[1]} | nDCG@{ks[2]} | nDCG@{ks[3]} |\n'
     val_content = f'{epoch:10d}|'
     val_results_recall = val_results['recall']

@@ -60,6 +60,11 @@ class Demo(nn.Module):
         self.get_hist_graph_ori()
         self.get_agg_graph_ori()
         
+    def init_md_dropouts(self):
+        self.item_level_dropout = nn.Dropout(0.2, True)    
+        self.bundle_level_dropout = nn.Dropout(0.4, True)
+        self.bundle_agg_dropout = nn.Dropout(0.1, True)
+    
     def init_embed(self):
         self.users_feat = nn.Parameter(torch.FloatTensor(self.num_users, self.embedding_size))
         nn.init.xavier_normal_(self.users_feat)
@@ -159,13 +164,49 @@ class Demo(nn.Module):
 
         return aff_bundles_feat
     
+    def IL_bundle_rep(self, IL_item_feature, test):
+        if test:
+            IL_bundle_feature = self.bundle_agg_graph_ori @ IL_item_feature
+        else:
+            IL_bundle_feature = self.bundle_agg_graph @ IL_item_feature
+        
+        if self.conf['agg_ed_ratio']:
+            IL_bundle_feature = self.bundle_agg_dropout(IL_bundle_feature)
+        
+        return IL_bundle_feature
+    
+    def get_bundle_agg_graph_IU(self):
+        device = self.device
+        ui_graph = self.ui_graph
+        user_size = ui_graph.sum(axis=1) + 1e-8
+        ui_graph = sp.diags(1/user_size.A.ravel()) @ ui_graph
+        self.bundle_agg_graph_IU = to_tensor(ui_graph).to(device)
+        
+    def get_IU_bundle_rep(self, IL_item_feature, test):
+        IU_bundle_feat = self.bundle_agg_graph_IU @ IL_item_feature
+        bu_graph = self.ub_graph.T
+        
+        bundle_size = bu_graph.sum(axis=1) + 1e-8
+        bu_graph = sp.diags(1/bundle_size.A.ravel()) @ bu_graph
+        self.bundle_agg_graph_BU = to_tensor(bu_graph).to(self.device)
+        BIU_bundle_feat = self.bundle_agg_graph_BU @ IU_bundle_feat
+        
+        return BIU_bundle_feat
+        
+    
     def propagate(self, test=False):
+        # Affiliate view
         if test:
             aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat)
             
         else:
             aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat)
             
+        IL_aff_bundles_feat = self.IL_bundle_rep(aff_items_feat, test)
+        BIU_aff_bundles_feat = self.get_IU_bundle_rep(aff_items_feat, test)
+        IL_aff_bundles_feat = (IL_aff_bundles_feat + BIU_aff_bundles_feat)
+        
+        # History view
         if test:
             hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph_ori, self.users_feat, self.bundles_feat)
         else:
@@ -174,7 +215,7 @@ class Demo(nn.Module):
         aff_bundles_feat = self.get_aff_bundle_rep(aff_items_feat, test)
         
         users_feat = [aff_users_feat, hist_users_feat]
-        bundles_feat = [aff_bundles_feat, hist_bundles_feat]
+        bundles_feat = [IL_aff_bundles_feat, hist_bundles_feat]
         
         return users_feat, bundles_feat
     
