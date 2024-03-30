@@ -55,6 +55,7 @@ class Demo(nn.Module):
         self.get_aff_graph()
         self.get_hist_graph()
         self.get_agg_graph()
+        self.get_bundle_agg_graph_IU()
         
         self.get_aff_graph_ori()
         self.get_hist_graph_ori()
