@@ -207,7 +207,7 @@ class Demo(nn.Module):
             
         IL_aff_bundles_feat = self.IL_bundle_rep(aff_items_feat, test)
         BIU_aff_bundles_feat = self.get_IU_bundle_rep(aff_items_feat, test)
-        IL_aff_bundles_feat = (IL_aff_bundles_feat + BIU_aff_bundles_feat)
+        IL_aff_bundles_feat = (IL_aff_bundles_feat + BIU_aff_bundles_feat) / 2
         
         # History view
         if test:
