@@ -50,7 +50,7 @@ class Demo(nn.Module):
         
         self.init_embed()
         
-        self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
+        self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
         
         self.get_aff_graph()
         self.get_hist_graph()
