@@ -14,8 +14,8 @@ def cal_bpr_loss(pred):
 def laplace_transform(graph):
     epsilon = 1e-8
     rowsum_sqrt = sp.diags(1/(np.sqrt(graph.sum(axis=1).A.ravel()) + epsilon))
-    colsum_sqty = sp.diags(1/(np.sqrt(graph.sum(axis=0).A.ravel()) + epsilon))
-    graph = rowsum_sqrt @ graph @ colsum_sqty
+    colsum_sqrt = sp.diags(1/(np.sqrt(graph.sum(axis=0).A.ravel()) + epsilon))
+    graph = rowsum_sqrt @ graph @ colsum_sqrt
     
     return graph
 
