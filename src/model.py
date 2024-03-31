@@ -192,7 +192,7 @@ class Demo(nn.Module):
         aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma.unsqueeze(2))
         hist_bundles_feat_ = hist_bundles_feat * bundles_gamma.unsqueeze(2)
         
-        pred = torch.sum(aff_bundles_feat * aff_bundles_feat_, 2) + torch.sum(hist_bundles_feat * hist_bundles_feat_, 2)
+        pred = torch.sum(aff_users_feat * aff_bundles_feat_, 2) + torch.sum(hist_users_feat * hist_bundles_feat_, 2)
         bpr_loss = cal_bpr_loss(pred)
         
         aff_bundles_feat = aff_bundles_feat[:, 0, :]
