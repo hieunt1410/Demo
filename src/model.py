@@ -182,7 +182,7 @@ class Demo(nn.Module):
     
     def get_bundle_agg_graph_IU(self):
         device = self.device
-        ui_graph = self.ui_graph
+        ui_graph = self.new_ui_graph
         user_size = ui_graph.sum(axis=1) + 1e-8
         ui_graph = sp.diags(1/user_size.A.ravel()) @ ui_graph
         self.bundle_agg_graph_IU = to_tensor(ui_graph).to(device)
