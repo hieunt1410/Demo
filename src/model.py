@@ -143,12 +143,14 @@ class Demo(nn.Module):
         bi_graph = sp.diags(1/bundle_sz.A.ravel()) @ bi_graph
         self.bundle_agg_graph_ori = to_tensor(bi_graph).to(device)
         
-    def one_propagate(self, graph, Afeat, Bfeat):
+    def one_propagate(self, graph, Afeat, Bfeat, mess_dropout, test):
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
         for i in range(self.num_layers):
             feats = torch.spmm(graph, feats)
+            if not test:
+                feat = mess_dropout(feats)
             feats = feats / (i+2)
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
@@ -200,10 +202,10 @@ class Demo(nn.Module):
     def propagate(self, test=False):
         # Affiliate view
         if test:
-            aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat)
+            aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat, self.item_level_dropout, test)
             
         else:
-            aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat)
+            aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
             
         IL_aff_bundles_feat = self.IL_bundle_rep(aff_items_feat, test)
         BIU_aff_bundles_feat = self.get_IU_bundle_rep(aff_items_feat, test)
@@ -211,9 +213,9 @@ class Demo(nn.Module):
         
         # History view
         if test:
-            hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph_ori, self.users_feat, self.bundles_feat)
+            hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph_ori, self.users_feat, self.bundles_feat, self.bundle_level_dropout, test)
         else:
-            hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph, self.users_feat, self.bundles_feat)
+            hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph, self.users_feat, self.bundles_feat, self.bundle_level_dropout, test)
             
         aff_bundles_feat = self.get_aff_bundle_rep(aff_items_feat, test)
         
