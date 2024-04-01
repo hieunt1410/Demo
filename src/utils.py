@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from model import to_tensor
+
 def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
     ub_graph, ui_graph, bi_graph = raw_graph
     
@@ -20,8 +22,8 @@ def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
         for r in range(bb_graph.indptr[i], bb_graph.indptr[i+1]):
             bb_graph.data[r] = 1 if bb_graph.data[r] > threshold else 0
             
-    uu_graph = uu_graph + np.eye(uu_graph.shape[0])
-    bb_graph = bb_graph + np.eye(bb_graph.shape[0])
+    uu_graph = uu_graph + np.eye(num_users)
+    bb_graph = bb_graph + np.eye(num_bundles)
     
     H1 = sp.hstack([uu_graph, ui_graph, ub_graph])
     H2 = sp.hstack([ui_graph.T, ii_graph, bi_graph.T])
@@ -47,6 +49,6 @@ def split_hypergraph(H, device, split_num=16):
         else:
             H_list.append(H[length*i:length*(i+1)])
     
-    H_split = [torch.tensor(h_i).to_sparse().to(device) for H_i in H_list]
+    H_split = [to_tensor(H_i) for H_i in H_list]
     
     return H_split
