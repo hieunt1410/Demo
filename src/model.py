@@ -65,7 +65,7 @@ class Demo(nn.Module):
         
         self.init_md_dropouts()
         
-        H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph))
+        H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
         self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
         
     def init_md_dropouts(self):
