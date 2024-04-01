@@ -204,12 +204,12 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):
         # Affiliate view
-        if test:
-            aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat, self.item_level_dropout, test)
+        # if test:
+        #     aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat, self.item_level_dropout, test)
             
-        else:
-            # aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
-            aff_users_feat, aff_items_feat, aff_bundles_feat = self.hyper_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundles_feat, self.bundle_level_dropout, test)
+        # else:
+        #     aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
+        aff_users_feat, aff_items_feat, aff_bundles_feat = self.hyper_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundles_feat, self.bundle_level_dropout, test)
         
         # History view
         if test:
