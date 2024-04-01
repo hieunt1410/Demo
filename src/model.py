@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils import *
+
 def cal_bpr_loss(pred):
     negs =  pred[:, 1].unsqueeze(1)
     pos = pred[:, 0].unsqueeze(1)
@@ -63,10 +65,16 @@ class Demo(nn.Module):
         
         self.init_md_dropouts()
         
+        H = mix_graph(raw_graph)
+        self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
+        
     def init_md_dropouts(self):
-        self.item_level_dropout = nn.Dropout(0.2, True)    
-        self.bundle_level_dropout = nn.Dropout(0.4, True)
-        self.bundle_agg_dropout = nn.Dropout(0.1, True)
+        # self.item_level_dropout = nn.Dropout(0.2, True)    
+        # self.bundle_level_dropout = nn.Dropout(0.4, True)
+        # self.bundle_agg_dropout = nn.Dropout(0.3, True)
+        self.item_level_dropout = nn.Dropout(0.2)    
+        self.bundle_level_dropout = nn.Dropout(0.4)
+        self.bundle_agg_dropout = nn.Dropout(0.3)
     
     def init_embed(self):
         self.users_feat = nn.Parameter(torch.FloatTensor(self.num_users, self.embedding_size))
@@ -161,6 +169,17 @@ class Demo(nn.Module):
         
         return Afeat, Bfeat
     
+    def hyper_propagate(self, graph, Ufeat, Ifeat, Bfeat, mess_dropout, test):
+        feats = torch.cat([Ufeat, Ifeat, Bfeat], dim=0)
+        all_feats = torch.cat([G @ feats for G in self.atom_graph], dim=0)
+        all_feats = feats / 2 + mess_dropout(all_feats) / 3
+        
+        Ufeat, Ifeat, Bfeat = torch.split(
+            all_feats, [Ufeat.shape[0], Ifeat.shape[0], Bfeat.shape[0]], dim=0
+        )
+        
+        return Ufeat, Ifeat, Bfeat
+    
     def get_aff_bundle_rep(self, aff_items_feat, test):
         if test:
             aff_bundles_feat = self.bundle_agg_graph_ori @ aff_items_feat
@@ -168,17 +187,6 @@ class Demo(nn.Module):
             aff_bundles_feat = self.bundle_agg_graph @ aff_items_feat
 
         return aff_bundles_feat
-    
-    def IL_bundle_rep(self, IL_item_feature, test):
-        if test:
-            IL_bundle_feature = self.bundle_agg_graph_ori @ IL_item_feature
-        else:
-            IL_bundle_feature = self.bundle_agg_graph @ IL_item_feature
-        
-        if self.conf['agg_ed_ratio']:
-            IL_bundle_feature = self.bundle_agg_dropout(IL_bundle_feature)
-        
-        return IL_bundle_feature
     
     def get_aug_bundle_agg_graph(self):
         device = self.device
@@ -202,17 +210,15 @@ class Demo(nn.Module):
         return aug_bundle_feat
         
     
+    
     def propagate(self, test=False):
         # Affiliate view
         if test:
             aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat, self.item_level_dropout, test)
             
         else:
-            aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
-            
-        IL_aff_bundles_feat = self.IL_bundle_rep(aff_items_feat, test)
-        aug_aff_bundles_feat = self.get_aug_bundle_rep(aff_items_feat, test)
-        IL_aff_bundles_feat = (IL_aff_bundles_feat + aug_aff_bundles_feat) / 2
+            # aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
+            aff_users_feat, aff_items_feat, aff_bundles_feat = self.hyper_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundles_feat, self.bundle_level_dropout, test)
         
         # History view
         if test:
@@ -220,10 +226,12 @@ class Demo(nn.Module):
         else:
             hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph, self.users_feat, self.bundles_feat, self.bundle_level_dropout, test)
             
-        aff_bundles_feat = self.get_aff_bundle_rep(aff_items_feat, test)
+        # aff_bundles_feat = self.get_aff_bundle_rep(aff_items_feat, test)
+        # aug_aff_bundles_feat = self.get_aug_bundle_rep(aff_items_feat, test)
+        # aff_bundles_feat = (aff_bundles_feat + aug_aff_bundles_feat) / 2
         
         users_feat = [aff_users_feat, hist_users_feat]
-        bundles_feat = [IL_aff_bundles_feat, hist_bundles_feat]
+        bundles_feat = [aff_bundles_feat, hist_bundles_feat]
         
         return users_feat, bundles_feat
     
