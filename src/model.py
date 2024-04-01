@@ -55,7 +55,7 @@ class Demo(nn.Module):
         self.get_aff_graph()
         self.get_hist_graph()
         self.get_agg_graph()
-        self.get_bundle_agg_graph_IU()
+        self.get_aug_bundle_agg_graph()
         
         self.get_aff_graph_ori()
         self.get_hist_graph_ori()
@@ -180,23 +180,26 @@ class Demo(nn.Module):
         
         return IL_bundle_feature
     
-    def get_bundle_agg_graph_IU(self):
+    def get_aug_bundle_agg_graph(self):
         device = self.device
         ui_graph = self.new_ui_graph
         user_size = ui_graph.sum(axis=1) + 1e-8
         ui_graph = sp.diags(1/user_size.A.ravel()) @ ui_graph
-        self.bundle_agg_graph_IU = to_tensor(ui_graph).to(device)
+        self.aug_bundle_agg_graph = to_tensor(ui_graph).to(device)
         
-    def get_IU_bundle_rep(self, IL_item_feature, test):
-        IU_bundle_feat = self.bundle_agg_graph_IU @ IL_item_feature
+    def get_aug_bundle_rep(self, IL_item_feature, test):
+        aug_bundle_feat = self.aug_bundle_agg_graph @ IL_item_feature
         bu_graph = self.ub_graph.T
         
         bundle_size = bu_graph.sum(axis=1) + 1e-8
         bu_graph = sp.diags(1/bundle_size.A.ravel()) @ bu_graph
         self.bundle_agg_graph_BU = to_tensor(bu_graph).to(self.device)
-        BIU_bundle_feat = self.bundle_agg_graph_BU @ IU_bundle_feat
+        aug_bundle_feat = self.bundle_agg_graph_BU @ aug_bundle_feat
         
-        return BIU_bundle_feat
+        if test:
+            aug_bundle_feat = self.bundle_agg_dropout(aug_bundle_feat)
+        
+        return aug_bundle_feat
         
     
     def propagate(self, test=False):
@@ -208,8 +211,8 @@ class Demo(nn.Module):
             aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
             
         IL_aff_bundles_feat = self.IL_bundle_rep(aff_items_feat, test)
-        BIU_aff_bundles_feat = self.get_IU_bundle_rep(aff_items_feat, test)
-        IL_aff_bundles_feat = (IL_aff_bundles_feat + BIU_aff_bundles_feat) / 2
+        aug_aff_bundles_feat = self.get_aug_bundle_rep(aff_items_feat, test)
+        IL_aff_bundles_feat = (IL_aff_bundles_feat + aug_aff_bundles_feat) / 2
         
         # History view
         if test:
