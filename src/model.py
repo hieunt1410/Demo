@@ -21,15 +21,6 @@ def laplace_transform(graph):
     
     return graph
 
-def to_tensor(graph):
-    """Convert to sparse tensor"""
-    graph = graph.tocoo()
-    values = graph.data
-    indices = np.vstack((graph.row, graph.col))
-    graph = torch.sparse_coo_tensor(torch.LongTensor(indices), torch.FloatTensor(values), torch.Size(graph.shape))
-    
-    return graph
-
 def np_edge_dropout(values, dropout):
     mask = np.random.choice([0, 1], size = len(values), p=[dropout, 1 - dropout])
     values = mask * values

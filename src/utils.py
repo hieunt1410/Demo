@@ -4,7 +4,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model import to_tensor
+def to_tensor(graph):
+    """Convert to sparse tensor"""
+    graph = graph.tocoo()
+    values = graph.data
+    indices = np.vstack((graph.row, graph.col))
+    graph = torch.sparse_coo_tensor(torch.LongTensor(indices), torch.FloatTensor(values), torch.Size(graph.shape))
+    
+    return graph
 
 def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
     ub_graph, ui_graph, bi_graph = raw_graph
