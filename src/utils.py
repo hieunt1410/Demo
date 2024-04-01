@@ -20,8 +20,8 @@ def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
         for r in range(bb_graph.indptr[i], bb_graph.indptr[i+1]):
             bb_graph.data[r] = 1 if bb_graph.data[r] > threshold else 0
             
-    uu_graph = np.eye(num_users) + uu_graph
-    bb_graph = np.eye(num_bundles) + bb_graph
+    uu_graph = uu_graph + np.eye(num_users)
+    bb_graph = bb_graph + np.eye(num_bundles)
     
     H1 = sp.hstack([uu_graph, ui_graph, ub_graph])
     H2 = sp.hstack([ui_graph.T, ii_graph, bi_graph.T])
