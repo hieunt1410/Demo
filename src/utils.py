@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
-    ui_graph, bi_graph, ub_graph = raw_graph
+    ub_graph, ui_graph, bi_graph = raw_graph
     
     ii_graph = np.zeros((num_items, num_items), dtype=np.int32)
     
@@ -23,14 +23,10 @@ def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
     uu_graph = uu_graph + np.eye(uu_graph.shape[0])
     bb_graph = bb_graph + np.eye(bb_graph.shape[0])
     
-    H1 = sp.vstack((uu_graph,ui_graph.T))
-    H1 = sp.vstack((H1,ub_graph.T))
-    H2 = sp.vstack((ui_graph,ii_graph))
-    H2 = sp.vstack((H2,bi_graph))
-    H3 = sp.vstack((ub_graph,bi_graph.T))
-    H3 = sp.vstack((H3,bb_graph))
-    H = sp.hstack((H1,H2))
-    H = sp.hstack((H,H3))
+    H1 = sp.hstack([uu_graph, ui_graph, ub_graph])
+    H2 = sp.hstack([ui_graph.T, ii_graph, bi_graph.T])
+    H3 = sp.hstack([ub_graph.T, bi_graph, bb_graph])
+    H = sp.vstack([H1, H2, H3])
     print('Finish mix hypergraph')
     
     return H
