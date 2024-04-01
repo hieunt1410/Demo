@@ -56,6 +56,6 @@ def split_hypergraph(H, device, split_num=16):
         else:
             H_list.append(H[length*i:length*(i+1)])
     
-    H_split = [to_tensor(H_i) for H_i in H_list]
+    H_split = [to_tensor(H_i).to(device) for H_i in H_list]
     
     return H_split
