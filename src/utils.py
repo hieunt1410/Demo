@@ -7,7 +7,7 @@ import torch.nn.functional as F
 def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
     ui_graph, bi_graph, ub_graph = raw_graph
     
-    ii_graph = np.zeros((num_items, num_items), dtype=np.int32)
+    ii_graph = np.zeros((32770, 32770), dtype=np.int32)
     
     uu_graph = ub_graph @ ub_graph.T
     for i in range(ub_graph.shape[0]):
@@ -20,17 +20,13 @@ def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
         for r in range(bb_graph.indptr[i], bb_graph.indptr[i+1]):
             bb_graph.data[r] = 1 if bb_graph.data[r] > threshold else 0
             
-    uu_graph = uu_graph + np.eye(num_users)
-    bb_graph = bb_graph + np.eye(num_bundles)
+    uu_graph = uu_graph + np.eye(8039)
+    bb_graph = bb_graph + np.eye(4771)
     
-    H1 = sp.vstack((uu_graph,ui_graph.T))
-    H1 = sp.vstack((H1,ub_graph.T))
-    H2 = sp.vstack((ui_graph,ii_graph))
-    H2 = sp.vstack((H2,bi_graph))
-    H3 = sp.vstack((ub_graph,bi_graph.T))
-    H3 = sp.vstack((H3,bb_graph))
-    H = sp.hstack((H1,H2))
-    H = sp.hstack((H,H3))
+    H1 = sp.hstack([uu_graph, ui_graph, ub_graph])
+    H2 = sp.hstack([ui_graph.T, ii_graph, bi_graph.T])
+    H3 = sp.hstack([ub_graph.T, bi_graph, bb_graph])
+    H = sp.vstack([H1, H2, H3])
     print('Finish mix hypergraph')
     
     return H
