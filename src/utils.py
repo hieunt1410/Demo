@@ -18,7 +18,8 @@ def to_tensor(graph):
 def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
     ub_graph, ui_graph, bi_graph = raw_graph
     
-    ii_graph = np.zeros((num_items, num_items), dtype=np.int32)
+    # ii_graph = np.zeros((num_items, num_items), dtype=np.int32)
+    ii_graph = bi_graph.T @ bi_graph
     
     uu_graph = ub_graph @ ub_graph.T
     for i in range(ub_graph.shape[0]):
