@@ -11,13 +11,13 @@ def mix_graph(raw_graph, threshold=10):
     
     uu_graph = ub_graph @ ub_graph.T
     for i in range(ub_graph.shape[0]):
-        for r in range(uu_graph.idxptr[i], uu_graph.idxptr[i+1]):
+        for r in range(uu_graph.indptr[i], uu_graph.indptr[i+1]):
             uu_graph.data[r] = 1 if uu_graph.data[r] > threshold else 0
     
     
     bb_graph = ub_graph.T @ ub_graph
     for i in range(ub_graph.shape[1]):
-        for r in range(bb_graph.idxptr[i], bb_graph.idxptr[i+1]):
+        for r in range(bb_graph.indptr[i], bb_graph.indptr[i+1]):
             bb_graph.data[r] = 1 if bb_graph.data[r] > threshold else 0
             
     uu_graph = np.eye(ub_graph.shape[0]) + uu_graph
