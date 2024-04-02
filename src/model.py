@@ -170,11 +170,11 @@ class Demo(nn.Module):
         return aggregated_feature if not test else mess_dropout(aggregated_feature)
     
     def fuse(self, users_feature, bundles_feature):
-        users_feature = torch.stack(users_feature, dim=0)
-        bundles_feature = torch.stack(bundles_feature, dim=0)
+        users_feats = torch.stack(users_feature, dim=0)
+        bundles_feats = torch.stack(bundles_feature, dim=0)
         
-        users_rep = torch.sum(users_feature * self.modal_coefs, dim=0)
-        bundles_rep = torch.sum(bundles_feature * self.modal_coefs, dim=0)
+        users_rep = users_feature * self.modal_coefs
+        bundles_rep = bundles_feature * self.modal_coefs
         
         return users_rep, bundles_rep
     
@@ -198,13 +198,13 @@ class Demo(nn.Module):
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
             BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)            
 
-        users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]#[(8039,),(8039,),(8039,)]
+        users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
+        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat  
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
-        return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
+        return [self.BL_layer(hist_users_rep), self.IL_layer(aff_users_rep)], [self.BL_layer(hist_bundles_rep), self.IL_layer(aff_bundles_rep)]
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
