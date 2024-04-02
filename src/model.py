@@ -197,8 +197,9 @@ class Demo(nn.Module):
         else:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
             BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)            
-            
-        users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
+
+        print(UB_users_feat.shape, UI_users_feat.shape, BI_users_feat.shape)
+        users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]#[(8039,),(8039,),(4771,)]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
         aff_users_rep, aff_bundles_rep = (UI_users_feat+BI_users_feat)/2, (UI_bundles_feat+BI_bundles_feat)/2
