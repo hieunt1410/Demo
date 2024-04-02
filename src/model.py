@@ -193,10 +193,10 @@ class Demo(nn.Module):
             
         if test:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph_ori, self.bundles_feat, self.items_feat, 'BI', test)
-            BI_users_feat = self.one_aggregate(self.BI_aggregation_graph_ori, self.users_feat, 'UI', test)
+            BI_users_feat = self.one_aggregate(self.UI_aggregation_graph_ori, BI_items_feat, 'UI', test)
         else:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
-            BI_users_feat = self.one_aggregate(self.BI_aggregation_graph, self.users_feat, 'UI', test)            
+            BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)            
             
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
