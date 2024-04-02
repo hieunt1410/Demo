@@ -186,10 +186,10 @@ class Demo(nn.Module):
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', test)
-            UI_bundles_feat = self.one_aggregate(self.UI_aggregation_graph_ori, self.items_feat, 'BI', test)
+            UI_bundles_feat = self.one_aggregate(self.UI_aggregation_graph_ori, UI_items_feat, 'BI', test)
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
-            UI_bundles_feat = self.one_aggregate(self.UI_aggregation_graph, self.items_feat, 'BI', test)
+            UI_bundles_feat = self.one_aggregate(self.UI_aggregation_graph, UI_items_feat, 'BI', test)
             
         if test:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph_ori, self.bundles_feat, self.items_feat, 'BI', test)
@@ -201,7 +201,7 @@ class Demo(nn.Module):
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        aff_users_rep, aff_bundles_rep = (UI_users_feat+UB_users_feat@BI_users_feat)/2, (UI_bundles_feat+UB_bundles_feat@BI_bundles_feat)/2
+        aff_users_rep, aff_bundles_rep = (UI_users_feat+BI_users_feat)/2, (UI_bundles_feat+BI_bundles_feat)/2
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
         return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
