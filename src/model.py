@@ -45,27 +45,44 @@ class Demo(nn.Module):
         
         self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
         
-        self.get_aff_graph()
-        self.get_hist_graph()
-        self.get_agg_graph()
-        self.get_aug_bundle_agg_graph()
+        # self.get_aff_graph()
+        # self.get_hist_graph()
+        # self.get_agg_graph()
+        # self.get_aug_bundle_agg_graph()
         
-        self.get_aff_graph_ori()
-        self.get_hist_graph_ori()
-        self.get_agg_graph_ori()
+        # self.get_aff_graph_ori()
+        # self.get_hist_graph_ori()
+        # self.get_agg_graph_ori()
+        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
+        
+        self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
+       
+        self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
+        self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
+        
+        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        
+        self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
+        self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
+        
+        self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
         self.init_md_dropouts()
         
-        H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
-        self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
+        # H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
+        # self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
         
     def init_md_dropouts(self):
-        # self.item_level_dropout = nn.Dropout(0.2, True)    
-        # self.bundle_level_dropout = nn.Dropout(0.4, True)
-        # self.bundle_agg_dropout = nn.Dropout(0.3, True)
-        self.item_level_dropout = nn.Dropout(0.2)    
-        self.bundle_level_dropout = nn.Dropout(0.4)
-        self.bundle_agg_dropout = nn.Dropout(0.3)
+        self.UB_dropout = nn.Dropout(self.conf['hist_ed_ratio'])
+        self.UI_dropout = nn.Dropout(self.conf['aff_ed_ratio'])
+        self.BI_dropout = nn.Dropout(self.conf['agg_ed_ratio'])
+        self.mess_dropout_dict = {
+            'UB': self.UB_dropout,
+            'UI': self.UI_dropout,
+            'BI': self.BI_dropout
+        }
     
     def init_embed(self):
         self.users_feat = nn.Parameter(torch.FloatTensor(self.num_users, self.embedding_size))
@@ -79,70 +96,44 @@ class Demo(nn.Module):
         self.BL_layer = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         nn.init.xavier_normal_(self.BL_layer.weight)
         
-    def get_aff_graph(self):
-        ui_graph = self.ui_graph
-        device = self.device
-        modification_ratio = self.conf['aff_ed_ratio']
+    def init_fusion_weights(self):
+        modal_coefs = torch.FloatTensor([0.5, 0.2, 0.3])
+        UB_layer_coefs = torch.FloatTensor([0.35, 0.15, 0.5])
+        UI_layer_coefs = torch.FloatTensor([0.25, 0.65, 0.1])
+        BI_layer_coefs = torch.FloatTensor([0.4, 0.4, 0.2])
+
+        self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
+
+        self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+        self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+        self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
         
-        item_level_graph = sp.bmat([[sp.csr_matrix((ui_graph.shape[0], ui_graph.shape[0])), ui_graph], [ui_graph.T, sp.csr_matrix((ui_graph.shape[1], ui_graph.shape[1]))]])
+    def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
+        device = self.device
+        propagation_graph = sp.bmat([[sp.csr_matrix((bipartite_graph.shape[0], bipartite_graph.shape[0])), bipartite_graph], [bipartite_graph.T, sp.csr_matrix((bipartite_graph.shape[1], bipartite_graph.shape[1]))]])
+        
         if modification_ratio:
-            graph = item_level_graph.tocoo()
+            graph = propagation_graph.tocoo()
             values = np_edge_dropout(graph.data, modification_ratio)
-            item_level_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-            
-        self.aff_view_graph = to_tensor(laplace_transform(item_level_graph)).to(device)
+            propagation_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-    def get_aff_graph_ori(self):
-        ui_graph = self.ui_graph
-        device = self.device
-        
-        item_level_graph = sp.bmat([[sp.csr_matrix((ui_graph.shape[0], ui_graph.shape[0])), ui_graph], [ui_graph.T, sp.csr_matrix((ui_graph.shape[1], ui_graph.shape[1]))]])
-        self.aff_view_graph_ori = to_tensor(laplace_transform(item_level_graph)).to(device)
+        return to_tensor(laplace_transform(propagation_graph)).to(device)
     
-    def get_hist_graph(self):
-        ub_graph = self.ub_graph
+    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
-        modification_ratio = self.conf['hist_ed_ratio']
-        
-        bundle_level_graph = sp.bmat([[sp.csr_matrix((ub_graph.shape[0], ub_graph.shape[0])), ub_graph], [ub_graph.T, sp.csr_matrix((ub_graph.shape[1], ub_graph.shape[1]))]])
-        
         if modification_ratio:
-            graph = bundle_level_graph.tocoo()
+            graph = birpartite_graph.tocoo()
             values = np_edge_dropout(graph.data, modification_ratio)
-            bundle_level_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+            
+        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
         
-        self.hist_view_graph = to_tensor(laplace_transform(bundle_level_graph)).to(device)
+        return to_tensor(birpartite_graph).to(device)
+    
+    def one_propagate(self, graph, Afeat, Bfeat, graph_type, test):
+        mess_dropout = self.mess_dropout_dict[graph_type]
         
-    def get_hist_graph_ori(self):
-        ub_graph = self.ub_graph
-        device = self.device
-        
-        bundle_level_graph = sp.bmat([[sp.csr_matrix((ub_graph.shape[0], ub_graph.shape[0])), ub_graph], [ub_graph.T, sp.csr_matrix((ub_graph.shape[1], ub_graph.shape[1]))]])
-        
-        self.hist_view_graph_ori = to_tensor(laplace_transform(bundle_level_graph)).to(device)
-        
-    def get_agg_graph(self):
-        bi_graph = self.bi_graph
-        device = self.device
-        modification_ratio = self.conf['agg_ed_ratio']
-        
-        graph = bi_graph.tocoo()
-        values = np_edge_dropout(graph.data, modification_ratio)
-        bi_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        
-        bundle_sz = bi_graph.sum(axis=1) + 1e-8
-        bi_graph = sp.diags(1/bundle_sz.A.ravel()) @ bi_graph
-        self.bundle_agg_graph = to_tensor(bi_graph).to(device)
-        
-    def get_agg_graph_ori(self):
-        bi_graph = self.bi_graph
-        device = self.device
-        
-        bundle_sz = bi_graph.sum(axis=1) + 1e-8
-        bi_graph = sp.diags(1/bundle_sz.A.ravel()) @ bi_graph
-        self.bundle_agg_graph_ori = to_tensor(bi_graph).to(device)
-        
-    def one_propagate(self, graph, Afeat, Bfeat, mess_dropout, test):
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
@@ -160,72 +151,61 @@ class Demo(nn.Module):
         
         return Afeat, Bfeat
     
-    def hyper_propagate(self, graph, Ufeat, Ifeat, Bfeat, mess_dropout, test):
-        feats = torch.cat([Ufeat, Ifeat, Bfeat], dim=0)
-        all_feats = torch.cat([G @ feats for G in self.atom_graph], dim=0)
-        all_feats = feats / 2 + mess_dropout(all_feats) / 3
+    # def hyper_propagate(self, graph, Ufeat, Ifeat, Bfeat, mess_dropout, test):
+    #     feats = torch.cat([Ufeat, Ifeat, Bfeat], dim=0)
+    #     all_feats = torch.cat([G @ feats for G in self.atom_graph], dim=0)
+    #     all_feats = feats / 2 + mess_dropout(all_feats) / 3
         
-        Ufeat, Ifeat, Bfeat = torch.split(
-            all_feats, [Ufeat.shape[0], Ifeat.shape[0], Bfeat.shape[0]], dim=0
-        )
+    #     Ufeat, Ifeat, Bfeat = torch.split(
+    #         all_feats, [Ufeat.shape[0], Ifeat.shape[0], Bfeat.shape[0]], dim=0
+    #     )
         
-        return Ufeat, Ifeat, Bfeat
+    #     return Ufeat, Ifeat, Bfeat
     
-    def get_aff_bundle_rep(self, aff_items_feat, test):
-        if test:
-            aff_bundles_feat = self.bundle_agg_graph_ori @ aff_items_feat
-        else:
-            aff_bundles_feat = self.bundle_agg_graph @ aff_items_feat
+    def one_aggregate(self, agg_graph, node_feature, graph_type, test):
+        aggregated_feature = agg_graph @ node_feature
+        
+        mess_dropout = self.mess_dropout_dict[graph_type]
 
-        return aff_bundles_feat
+        return aggregated_feature if not test else mess_dropout(aggregated_feature)
     
-    def get_aug_bundle_agg_graph(self):
-        device = self.device
-        ui_graph = self.new_ui_graph
-        user_size = ui_graph.sum(axis=1) + 1e-8
-        ui_graph = sp.diags(1/user_size.A.ravel()) @ ui_graph
-        self.aug_bundle_agg_graph = to_tensor(ui_graph).to(device)
+    def fuse(self, users_feature, bundles_feature):
+        users_feature = torch.stack(users_feature, dim=0)
+        bundles_feature = torch.stack(bundles_feature, dim=0)
         
-    def get_aug_bundle_rep(self, IL_item_feature, test):
-        aug_bundle_feat = self.aug_bundle_agg_graph @ IL_item_feature
-        bu_graph = self.ub_graph.T
+        users_rep = torch.sum(users_feature * self.modal_coefs, dim=0)
+        bundles_rep = torch.sum(bundles_feature * self.modal_coefs, dim=0)
         
-        bundle_size = bu_graph.sum(axis=1) + 1e-8
-        bu_graph = sp.diags(1/bundle_size.A.ravel()) @ bu_graph
-        self.bundle_agg_graph_BU = to_tensor(bu_graph).to(self.device)
-        aug_bundle_feat = self.bundle_agg_graph_BU @ aug_bundle_feat
-        
-        if test:
-            aug_bundle_feat = self.bundle_agg_dropout(aug_bundle_feat)
-        
-        return aug_bundle_feat
-        
-    
+        return users_rep, bundles_rep
     
     def propagate(self, test=False):
-        # Affiliate view
-        # if test:
-        #     aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph_ori, self.users_feat, self.items_feat, self.item_level_dropout, test)
-            
-        # else:
-        #     aff_users_feat, aff_items_feat = self.one_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundle_level_dropout, test)
-        aff_users_feat, aff_items_feat, aff_bundles_feat = self.hyper_propagate(self.aff_view_graph, self.users_feat, self.items_feat, self.bundles_feat, self.bundle_level_dropout, test)
-        
-        # History view
         if test:
-            hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph_ori, self.users_feat, self.bundles_feat, self.bundle_level_dropout, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, 'UB', test)
         else:
-            hist_users_feat, hist_bundles_feat = self.one_propagate(self.hist_view_graph, self.users_feat, self.bundles_feat, self.bundle_level_dropout, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, 'UB', test)
             
-        # aff_bundles_feat = self.get_aff_bundle_rep(aff_items_feat, test)
-        # aug_aff_bundles_feat = self.get_aug_bundle_rep(aff_items_feat, test)
-        # aff_bundles_feat = (aff_bundles_feat + aug_aff_bundles_feat) / 2
+        if test:
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', test)
+            UI_bundles_feat = self.one_aggregate(self.UI_aggregation_graph_ori, self.bundles_feat, 'BI', test)
+        else:
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
+            UI_bundles_feat = self.one_aggregate(self.UI_aggregation_graph, self.bundles_feat, 'BI', test)
+            
+        if test:
+            BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph_ori, self.bundles_feat, self.items_feat, 'BI', test)
+            BI_users_feat = self.one_aggregate(self.BI_aggregation_graph_ori, self.users_feat, 'UI', test)
+        else:
+            BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
+            BI_users_feat = self.one_aggregate(self.BI_aggregation_graph, self.users_feat, 'UI', test)            
+            
+        users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
+        bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        users_feat = [aff_users_feat, hist_users_feat]
-        bundles_feat = [aff_bundles_feat, hist_bundles_feat]
+        aff_users_rep, aff_bundles_rep = (UI_users_feat+BI_users_feat)/2, (UI_bundles_feat+BI_bundles_feat)/2
+        hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
-        return users_feat, bundles_feat
-    
+        return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
+            
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
         return (x - y).norm(p=2, dim=1).pow(2).mean()
