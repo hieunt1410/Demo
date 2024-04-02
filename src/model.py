@@ -241,9 +241,13 @@ class Demo(nn.Module):
     
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
-            self.get_aff_graph()
-            self.get_hist_graph()
-            self.get_agg_graph()
+            self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
+            
+            self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            
+            self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
+            self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
         users, bundles = batch
         users_feat, bundles_feat = self.propagate()
