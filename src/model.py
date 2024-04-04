@@ -104,16 +104,12 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
-        self.IL_layer = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
-        nn.init.xavier_normal_(self.IL_layer.weight)
-        self.BL_layer = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
-        nn.init.xavier_normal_(self.BL_layer.weight)
         
     def init_fusion_weights(self):
-        modal_coefs = torch.FloatTensor([0.5, 0.2, 0.3])
-        UB_layer_coefs = torch.FloatTensor([0.35, 0.15, 0.5])
-        UI_layer_coefs = torch.FloatTensor([0.25, 0.65, 0.1])
-        BI_layer_coefs = torch.FloatTensor([0.4, 0.4, 0.2])
+        modal_coefs = torch.FloatTensor(self.fusion_weights['modal_weight'])
+        UB_layer_coefs = torch.FloatTensor(self.fusion_weights['UB_layer'])
+        UI_layer_coefs = torch.FloatTensor(self.fusion_weights['UI_layer'])
+        BI_layer_coefs = torch.FloatTensor(self.fusion_weights['BI_layer'])
 
         self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
 
