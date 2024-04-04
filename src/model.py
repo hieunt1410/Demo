@@ -278,6 +278,23 @@ class Demo(nn.Module):
         
         return bpr_loss, (c_loss + bundle_au_loss + user_au_loss) / 2
     
+    def cal_loss_(self, users_feat, bundles_feat):
+        aff_users_feat, hist_users_feat = users_feat
+        aff_bundles_feat, hist_bundles_feat = bundles_feat
+        
+        pred = torch.sum(aff_users_feat * aff_bundles_feat, 2) + torch.sum(hist_users_feat * hist_bundles_feat, 2)
+        bpr_loss = cal_bpr_loss(pred)
+        
+        aff_users_feat = aff_users_feat[:, 0, :]
+        hist_users_feat = hist_users_feat[:, 0, :]
+        user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
+        
+        aff_bundles_feat = aff_bundles_feat[:, 0, :]
+        hist_bundles_feat = hist_bundles_feat[:, 0, :]
+        bundle_c_loss = self.cal_c_loss(aff_bundles_feat, hist_bundles_feat)
+        
+        return bpr_loss, (user_c_loss + bundle_c_loss) / 2
+    
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
@@ -293,10 +310,11 @@ class Demo(nn.Module):
         
         users_embedding = [i[users].expand(-1, bundles.shape[1], -1) for i in users_feat]
         bundles_embedding = [i[bundles] for i in bundles_feat]
-        bundles_gamma = torch.tanh(self.bundle_freq / psi)
-        bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
+        # bundles_gamma = torch.tanh(self.bundle_freq / psi)
+        # bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
-        bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        # bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        bpr_loss, c_loss = self.cal_loss_(users_embedding, bundles_embedding)
         
         return bpr_loss, c_loss
         
@@ -304,9 +322,10 @@ class Demo(nn.Module):
         users_feat, bundles_feat = propagate_result
         aff_users_feat, hist_users_feat = [i[users] for i in users_feat]
         aff_bundles_feat, hist_bundles_feat = bundles_feat
-        bundle_gamma = torch.tanh(self.bundle_freq / psi)
-        aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
-        hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
-        scores = aff_users_feat @ aff_bundles_feat_.T + hist_users_feat @ hist_bundles_feat_.T
+        # bundle_gamma = torch.tanh(self.bundle_freq / psi)
+        # aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
+        # hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
+        # scores = aff_users_feat @ aff_bundles_feat_.T + hist_users_feat @ hist_bundles_feat_.T
+        scores = aff_users_feat @ aff_bundles_feat.T + hist_users_feat @ hist_bundles_feat.T
         
         return scores
