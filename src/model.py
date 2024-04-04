@@ -117,9 +117,9 @@ class Demo(nn.Module):
 
         self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
 
-        self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
-        self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
-        self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+        self.UB_layer_coefs = UB_layer_coefs.unsqueeze(-1).to(self.device)
+        self.UI_layer_coefs = UI_layer_coefs.unsqueeze(-1).to(self.device)
+        self.BI_layer_coefs = BI_layer_coefs.unsqueeze(-1).to(self.device)
         
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
