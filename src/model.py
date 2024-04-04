@@ -261,7 +261,7 @@ class Demo(nn.Module):
         aff_bundles_feat = aff_bundles_feat[:, 0, :]
         hist_bundles_feat = hist_bundles_feat[:, 0, :]
         bundle_align = self.cal_a_loss(aff_bundles_feat, hist_bundles_feat)
-        bundle_uniform = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat)) / 2
+        bundle_uniform = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat))
         
         bundle_au_loss = bundle_align + bundle_uniform
         bundle_c_loss = self.cal_c_loss(aff_bundles_feat, hist_bundles_feat)
@@ -269,7 +269,7 @@ class Demo(nn.Module):
         aff_users_feat = aff_users_feat[:, 0, :]
         hist_users_feat = hist_users_feat[:, 0, :]
         user_align = self.cal_a_loss(aff_users_feat, hist_users_feat)
-        user_uniform = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat)) / 2
+        user_uniform = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat))
         user_au_loss = user_align + user_uniform
         user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
         
