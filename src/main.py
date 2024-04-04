@@ -31,7 +31,7 @@ def main():
     params = get_cmd().__dict__
     dataset_name = params['data']
     conf = conf[dataset_name]
-    conf['data_path'] = '../data/{}/{dataset}/'.format(type=params['type'], dataset=dataset_name)
+    conf['data_path'] = f'../data/{params["type"]}/{dataset_name}/'
     
     conf['dataset'] = dataset_name
     conf['model'] = params['model']
