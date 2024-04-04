@@ -63,6 +63,8 @@ class Demo(nn.Module):
         
         self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
         self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
+        self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         
         self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
@@ -182,21 +184,21 @@ class Demo(nn.Module):
         if test:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, 'UB', test)
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, 'UB', test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, 'UB', test)#user feature in UB view, bundle feature in UB view
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', test)
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)
+            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
             
         if test:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph_ori, self.bundles_feat, self.items_feat, 'BI', test)
             BI_users_feat = self.one_aggregate(self.UI_aggregation_graph_ori, BI_items_feat, 'UI', test)
         else:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
-            BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)            
+            BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)#user feature in BI view            
 
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
@@ -204,7 +206,7 @@ class Demo(nn.Module):
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat  
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
-        return [self.BL_layer(hist_users_rep), self.IL_layer(aff_users_rep)], [self.BL_layer(hist_bundles_rep), self.IL_layer(aff_bundles_rep)]
+        return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
@@ -213,6 +215,18 @@ class Demo(nn.Module):
     def cal_u_loss(self, x):
         x = F.normalize(x, dim=-1)
         return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
+    
+    def cal_c_loss(self, pos, aug):
+        pos = F.normalize(pos, p=2, dim=1)
+        aug = F.normalize(aug, p=2, dim=1)
+        pos_score = torch.sum(pos * aug, dim=1)
+        
+        ttl_score = pos @ aug.T
+        ttl_score = torch.sum(torch.exp(ttl_score / 0.4), axis=1)
+        
+        c_loss = -torch.mean(torch.log(torch.exp(pos_score / 0.4) / ttl_score))
+        
+        return c_loss        
     
     def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
         aff_users_feat, hist_users_feat = users_feat
@@ -227,13 +241,16 @@ class Demo(nn.Module):
         hist_bundles_feat = hist_bundles_feat[:, 0, :]
         bundle_align = self.cal_a_loss(aff_bundles_feat, hist_bundles_feat)
         bundle_uniform = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat)) / 2
-        bundle_c_loss = bundle_align + bundle_uniform
+        
+        # bundle_c_loss = bundle_align + bundle_uniform
+        bundle_c_loss = self.cal_c_loss(aff_bundles_feat_, hist_bundles_feat_)
         
         aff_users_feat = aff_users_feat[:, 0, :]
         hist_users_feat = hist_users_feat[:, 0, :]
         user_align = self.cal_a_loss(aff_users_feat, hist_users_feat)
         user_uniform = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat)) / 2
-        user_c_loss = user_align + user_uniform
+        # user_c_loss = user_align + user_uniform
+        user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
         
         c_loss = (bundle_c_loss + user_c_loss) / 2
         
