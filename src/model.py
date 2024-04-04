@@ -184,7 +184,7 @@ class Demo(nn.Module):
         device = self.device
         bu_graph = self.ub_graph.T
         
-        UI_bundle_feature = self.UI_aggregation_graph @ aug_ui_graph
+        UI_bundle_feature = self.UI_aggregation_graph @ IL_item_feature
         bundle_size = bu_graph.sum(axis=1) + 1e-8
         bu_graph = sp.diags(1/bundle_size.A.ravel()) @ bu_graph
         self.bundle_agg_graph_BU = to_tensor(bu_graph).to(device)
