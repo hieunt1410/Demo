@@ -18,6 +18,7 @@ def get_cmd():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', '-d', type=str, default='Youshu', help='dataset name')
     parser.add_argument('--model', '-m', type=str, default='BPR', help='model name')
+    parser.add_argument('--type', '-t', type=str, default='cold', help='train or test')
     
     args = parser.parse_args()
     
@@ -30,6 +31,7 @@ def main():
     params = get_cmd().__dict__
     dataset_name = params['data']
     conf = conf[dataset_name]
+    conf['data_path'] = '../data/{}/{dataset}/'.format(type=params['type'], dataset=dataset_name)
     
     conf['dataset'] = dataset_name
     conf['model'] = params['model']
