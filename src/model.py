@@ -167,7 +167,6 @@ class Demo(nn.Module):
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
         all_feats = torch.stack(all_feats, dim=1) * layer_coef
-        print(all_feats.shape, layer_coef.shape)
         all_feats = torch.sum(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
@@ -227,10 +226,10 @@ class Demo(nn.Module):
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', self.UI_layer_coefs, test)
+            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
             
             UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
-            UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', self.UI_layer_coefs, test)
+            UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
