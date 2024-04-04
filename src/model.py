@@ -166,7 +166,7 @@ class Demo(nn.Module):
                 
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
-        all_feats = torch.stack(all_feats, dim=1) * layer_coef
+        all_feats = torch.stack(all_feats, dim=1)
         all_feats = torch.sum(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
@@ -249,7 +249,7 @@ class Demo(nn.Module):
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        aff_users_rep, aff_bundles_rep = UI_users_feat, (UI_bundles_feat + IL_bundle_feature) / 2
+        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
         return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
@@ -300,7 +300,7 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        return bpr_loss, (c_loss + a_loss) / 2
+        return bpr_loss, (c_loss + u_loss) / 2
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
