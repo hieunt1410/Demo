@@ -6,7 +6,7 @@ Youshu:
   topk_valid: 20
 
   embedding_size: 64
-  num_layers: 1
+  num_layers: 2
 
   aff_ed_ratio: 0.5
   hist_ed_ratio: 0.5

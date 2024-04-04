@@ -108,6 +108,14 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.items_feat)
         
     def init_fusion_weights(self):
+        assert (len(self.fusion_weights['modal_weight']) == 3), \
+            "The number of modal fusion weights does not correspond to the number of graphs"
+
+        assert (len(self.fusion_weights['UB_layer']) == self.num_layers + 1) and\
+               (len(self.fusion_weights['UI_layer']) == self.num_layers + 1) and \
+               (len(self.fusion_weights['BI_layer']) == self.num_layers + 1),\
+            "The number of layer fusion weights does not correspond to number of layers"
+            
         modal_coefs = torch.FloatTensor(self.fusion_weights['modal_weight'])
         UB_layer_coefs = torch.FloatTensor(self.fusion_weights['UB_layer'])
         UI_layer_coefs = torch.FloatTensor(self.fusion_weights['UI_layer'])
@@ -115,9 +123,9 @@ class Demo(nn.Module):
 
         self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
 
-        self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(1).to(self.device)
-        self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(1).to(self.device)
-        self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(1).to(self.device)
+        self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+        self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+        self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
         
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
