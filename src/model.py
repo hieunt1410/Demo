@@ -180,9 +180,9 @@ class Demo(nn.Module):
         
         return users_rep, bundles_rep
     
-    def get_aug_bundle_rep(self, aug_ui_graph, ub_graph):
+    def get_aug_bundle_rep(self, IL_item_feature):
         device = self.device
-        bu_graph = ub_graph.T
+        bu_graph = self.ub_graph.T
         
         UI_bundle_feature = self.UI_aggregation_graph @ aug_ui_graph
         bundle_size = bu_graph.sum(axis=1) + 1e-8
@@ -219,7 +219,7 @@ class Demo(nn.Module):
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
             BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)#user feature in BI view            
 
-        IL_bundle_feature = self.get_aug_bundle_rep(UI_bundles_feat, self.ub_graph)
+        IL_bundle_feature = self.get_aug_bundle_rep(UI_items_feat)
         
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
@@ -264,7 +264,7 @@ class Demo(nn.Module):
         bundle_uniform = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat)) / 2
         
         # bundle_c_loss = bundle_align + bundle_uniform
-        bundle_c_loss = self.cal_c_loss(aff_bundles_feat_, hist_bundles_feat_)
+        bundle_c_loss = self.cal_c_loss(aff_bundles_feat, hist_bundles_feat)
         
         aff_users_feat = aff_users_feat[:, 0, :]
         hist_users_feat = hist_users_feat[:, 0, :]
@@ -273,9 +273,10 @@ class Demo(nn.Module):
         # user_c_loss = user_align + user_uniform
         user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
         
+        u_loss = (bundle_uniform + user_uniform) / 2
         c_loss = (bundle_c_loss + user_c_loss) / 2
         
-        return bpr_loss, c_loss
+        return bpr_loss, (c_loss + u_loss) / 2
     
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
