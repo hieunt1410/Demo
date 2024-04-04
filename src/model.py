@@ -293,7 +293,11 @@ class Demo(nn.Module):
         hist_bundles_feat = hist_bundles_feat[:, 0, :]
         bundle_c_loss = self.cal_c_loss(aff_bundles_feat, hist_bundles_feat)
         
-        return bpr_loss, (user_c_loss + bundle_c_loss) / 2
+        user_u_loss = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat)) / 2
+        
+        bundle_u_loss = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat)) / 2
+        
+        return bpr_loss, (user_c_loss + bundle_c_loss + user_u_loss + bundle_u_loss) / 2
     
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
