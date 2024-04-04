@@ -224,7 +224,7 @@ class Demo(nn.Module):
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
+        aff_users_rep, aff_bundles_rep = UI_users_feat, (UI_bundles_feat + IL_bundle_feature) / 2
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
         return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
