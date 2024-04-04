@@ -21,6 +21,7 @@ Youshu:
   epochs: 100
   test_interval: 5
 
+  aug_type: 'MD'
 
 NetEase:
   data_path: '../data/all'
@@ -45,6 +46,7 @@ NetEase:
   epochs: 100
   test_interval: 5
 
+  aug_type: 'MD'
 
 iFashion:
   data_path: '../data/cold'
@@ -68,3 +70,5 @@ iFashion:
 
   epochs: 100
   test_interval: 5
+
+  aug_type: 'MD'

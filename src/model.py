@@ -72,7 +72,7 @@ class Demo(nn.Module):
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
         self.init_md_dropouts()
-        
+        self.init_noise_eps()
         # H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
         # self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
         
@@ -84,6 +84,16 @@ class Demo(nn.Module):
             'UB': self.UB_dropout,
             'UI': self.UI_dropout,
             'BI': self.BI_dropout
+        }
+        
+    def init_noise_eps(self):
+        self.UB_eps = self.conf["hist_ed_ratio"]
+        self.UI_eps = self.conf["aff_ed_ratio"]
+        self.BI_eps = self.conf["agg_ed_ratio"]
+        self.eps_dict = {
+            "UB": self.UB_eps,
+            "UI": self.UI_eps,
+            "BI": self.BI_eps
         }
     
     def init_embed(self):
@@ -133,21 +143,24 @@ class Demo(nn.Module):
         
         return to_tensor(birpartite_graph).to(device)
     
-    def one_propagate(self, graph, Afeat, Bfeat, graph_type, test):
-        mess_dropout = self.mess_dropout_dict[graph_type]
-        
+    def one_propagate(self, graph, Afeat, Bfeat, graph_type, layer_coef, test):
+        device = self.device
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
         for i in range(self.num_layers):
             feats = torch.spmm(graph, feats)
-            if not test:
-                feat = mess_dropout(feats)
-            feats = feats / (i+2)
+            if self.conf['aug_type'] == 'MD' and not test:
+                mess_dropout = self.mess_dropout_dict[graph_type]
+                feats = mess_dropout(feats)
+            elif self.conf['aug_type'] == 'Noise' and not test:
+                random_noise = torch.randn_like(feats).to(device)
+                feats += torch.sign(feats) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
+                
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
-        all_feats = torch.stack(all_feats, dim=1)
-        all_feats = torch.sum(all_feats, dim=1).squeeze(1)
+        all_feats = torch.stack(all_feats, dim=1) * layer_coef
+        all_feats = torch.sum(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
@@ -167,9 +180,14 @@ class Demo(nn.Module):
     def one_aggregate(self, agg_graph, node_feature, graph_type, test):
         aggregated_feature = agg_graph @ node_feature
         
-        mess_dropout = self.mess_dropout_dict[graph_type]
+        if self['aug_type'] == 'MD' and not test:
+            mess_dropout = self.mess_dropout_dict[graph_type]
+            aggregated_feature = mess_dropout(aggregated_feature)
+        elif self['aug_type'] == 'Noise' and not test:
+            random_noise = torch.randn_like(aggregated_feature).to(self.device)
+            aggregated_feature += torch.sign(aggregated_feature) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
 
-        return aggregated_feature if not test else mess_dropout(aggregated_feature)
+        return aggregated_feature
     
     def fuse(self, users_feature, bundles_feature):
         users_feats = torch.stack(users_feature, dim=0)
@@ -243,9 +261,9 @@ class Demo(nn.Module):
         pos_score = torch.sum(pos * aug, dim=1)
         
         ttl_score = pos @ aug.T
-        ttl_score = torch.sum(torch.exp(ttl_score / 0.4), axis=1)
+        ttl_score = torch.sum(torch.exp(ttl_score ), axis=1)
         
-        c_loss = -torch.mean(torch.log(torch.exp(pos_score / 0.4) / ttl_score))
+        c_loss = -torch.mean(torch.log(torch.exp(pos_score / 1) / ttl_score))
         
         return c_loss        
     
@@ -261,16 +279,14 @@ class Demo(nn.Module):
         aff_bundles_feat = aff_bundles_feat[:, 0, :]
         hist_bundles_feat = hist_bundles_feat[:, 0, :]
         bundle_align = self.cal_a_loss(aff_bundles_feat, hist_bundles_feat)
-        bundle_uniform = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat))
+        bundle_uniform = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat)) / 2
         
-        bundle_au_loss = bundle_align + bundle_uniform
         bundle_c_loss = self.cal_c_loss(aff_bundles_feat, hist_bundles_feat)
         
         aff_users_feat = aff_users_feat[:, 0, :]
         hist_users_feat = hist_users_feat[:, 0, :]
         user_align = self.cal_a_loss(aff_users_feat, hist_users_feat)
-        user_uniform = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat))
-        user_au_loss = user_align + user_uniform
+        user_uniform = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat)) / 2
         user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
         
         u_loss = (bundle_uniform + user_uniform)
@@ -278,28 +294,7 @@ class Demo(nn.Module):
         a_loss = (bundle_align + user_align)
         
         return bpr_loss, (c_loss + a_loss) / 2
-    
-    def cal_loss_(self, users_feat, bundles_feat):
-        aff_users_feat, hist_users_feat = users_feat
-        aff_bundles_feat, hist_bundles_feat = bundles_feat
-        
-        pred = torch.sum(aff_users_feat * aff_bundles_feat, 2) + torch.sum(hist_users_feat * hist_bundles_feat, 2)
-        bpr_loss = cal_bpr_loss(pred)
-        
-        aff_users_feat = aff_users_feat[:, 0, :]
-        hist_users_feat = hist_users_feat[:, 0, :]
-        user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
-        
-        aff_bundles_feat = aff_bundles_feat[:, 0, :]
-        hist_bundles_feat = hist_bundles_feat[:, 0, :]
-        bundle_c_loss = self.cal_c_loss(aff_bundles_feat, hist_bundles_feat)
-        
-        user_u_loss = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat)) / 2
-        
-        bundle_u_loss = (self.cal_u_loss(aff_bundles_feat) + self.cal_u_loss(hist_bundles_feat)) / 2
-        
-        return bpr_loss, (user_c_loss + bundle_c_loss + user_u_loss + bundle_u_loss) / 2
-    
+
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
