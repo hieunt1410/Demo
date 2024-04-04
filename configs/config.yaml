@@ -52,7 +52,7 @@ NetEase:
   epochs: 100
   test_interval: 5
 
-  aug_type: 'MD'
+  aug_type: 'Noise'
 
 iFashion:
   data_path: '../data/cold'
