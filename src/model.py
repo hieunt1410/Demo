@@ -180,6 +180,19 @@ class Demo(nn.Module):
         
         return users_rep, bundles_rep
     
+    def get_aug_bundle_rep(self, aug_ui_graph, ub_graph):
+        device = self.device
+        bu_graph = ub_graph.T
+        
+        UI_bundle_feature = self.UI_aggregation_graph @ aug_ui_graph
+        bundle_size = bu_graph.sum(axis=1) + 1e-8
+        bu_graph = sp.diags(1/bundle_size.A.ravel()) @ bu_graph
+        self.bundle_agg_graph_BU = to_tensor(bu_graph).to(device)
+        
+        IL_bundle_feature = self.bundle_agg_graph_BU @ UI_bundle_feature
+        
+        return IL_bundle_feature
+    
     def propagate(self, test=False):
         if test:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, 'UB', test)
@@ -189,9 +202,15 @@ class Demo(nn.Module):
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', test)
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
+            
+            UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
+            UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
+            
+            UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
+            UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)#bundle feature in UI view
             
         if test:
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph_ori, self.bundles_feat, self.items_feat, 'BI', test)
@@ -200,10 +219,12 @@ class Demo(nn.Module):
             BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', test)
             BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)#user feature in BI view            
 
+        IL_bundle_feature = self.get_aug_bundle_rep(UI_bundles_feat, self.ub_graph)
+        
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat  
+        aff_users_rep, aff_bundles_rep = UI_users_feat, (UI_bundles_feat + IL_bundle_feature) / 2  
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
         return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
