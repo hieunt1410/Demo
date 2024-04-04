@@ -188,10 +188,10 @@ class Demo(nn.Module):
     def one_aggregate(self, agg_graph, node_feature, graph_type, test):
         aggregated_feature = agg_graph @ node_feature
         
-        if self['aug_type'] == 'MD' and not test:
+        if self.conf['aug_type'] == 'MD' and not test:
             mess_dropout = self.mess_dropout_dict[graph_type]
             aggregated_feature = mess_dropout(aggregated_feature)
-        elif self['aug_type'] == 'Noise' and not test:
+        elif self.conf['aug_type'] == 'Noise' and not test:
             random_noise = torch.randn_like(aggregated_feature).to(self.device)
             aggregated_feature += torch.sign(aggregated_feature) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
 
