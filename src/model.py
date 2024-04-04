@@ -224,7 +224,7 @@ class Demo(nn.Module):
         users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
         bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
         
-        aff_users_rep, aff_bundles_rep = UI_users_feat, (UI_bundles_feat + IL_bundle_feature)
+        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
         return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
@@ -273,10 +273,10 @@ class Demo(nn.Module):
         user_au_loss = user_align + user_uniform
         user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
         
-        # u_loss = (bundle_uniform + user_uniform) / 2
+        u_loss = (bundle_uniform + user_uniform)
         c_loss = (bundle_c_loss + user_c_loss) 
         
-        return bpr_loss, (c_loss + bundle_au_loss + user_au_loss) / 2
+        return bpr_loss, (c_loss + u_loss)
     
     def cal_loss_(self, users_feat, bundles_feat):
         aff_users_feat, hist_users_feat = users_feat
