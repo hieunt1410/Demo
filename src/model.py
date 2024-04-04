@@ -275,8 +275,9 @@ class Demo(nn.Module):
         
         u_loss = (bundle_uniform + user_uniform)
         c_loss = (bundle_c_loss + user_c_loss) 
+        a_loss = (bundle_align + user_align)
         
-        return bpr_loss, (c_loss + u_loss)
+        return bpr_loss, (c_loss + a_loss) / 2
     
     def cal_loss_(self, users_feat, bundles_feat):
         aff_users_feat, hist_users_feat = users_feat
