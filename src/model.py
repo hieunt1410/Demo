@@ -314,11 +314,11 @@ class Demo(nn.Module):
         
         users_embedding = [i[users].expand(-1, bundles.shape[1], -1) for i in users_feat]
         bundles_embedding = [i[bundles] for i in bundles_feat]
-        # bundles_gamma = torch.tanh(self.bundle_freq / psi)
-        # bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
+        bundles_gamma = torch.tanh(self.bundle_freq / psi)
+        bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
-        # bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
-        bpr_loss, c_loss = self.cal_loss_(users_embedding, bundles_embedding)
+        bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        # bpr_loss, c_loss = self.cal_loss_(users_embedding, bundles_embedding)
         
         return bpr_loss, c_loss
         
@@ -326,10 +326,10 @@ class Demo(nn.Module):
         users_feat, bundles_feat = propagate_result
         aff_users_feat, hist_users_feat = [i[users] for i in users_feat]
         aff_bundles_feat, hist_bundles_feat = bundles_feat
-        # bundle_gamma = torch.tanh(self.bundle_freq / psi)
-        # aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
-        # hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
-        # scores = aff_users_feat @ aff_bundles_feat_.T + hist_users_feat @ hist_bundles_feat_.T
-        scores = aff_users_feat @ aff_bundles_feat.T + hist_users_feat @ hist_bundles_feat.T
+        bundle_gamma = torch.tanh(self.bundle_freq / psi)
+        aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
+        hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
+        scores = aff_users_feat @ aff_bundles_feat_.T + hist_users_feat @ hist_bundles_feat_.T
+        # scores = aff_users_feat @ aff_bundles_feat.T + hist_users_feat @ hist_bundles_feat.T
         
         return scores
