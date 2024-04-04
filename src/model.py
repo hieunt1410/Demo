@@ -73,6 +73,7 @@ class Demo(nn.Module):
         
         self.init_md_dropouts()
         self.init_noise_eps()
+        self.init_fusion_weights()
         # H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
         # self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
         
