@@ -144,9 +144,9 @@ class Demo(nn.Module):
             graph = birpartite_graph.tocoo()
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-            
+        
         bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph + 1 / np.exp(birpartite_graph.sum(axis=0))
         
         return to_tensor(birpartite_graph).to(device)
     
@@ -185,7 +185,7 @@ class Demo(nn.Module):
     #     return Ufeat, Ifeat, Bfeat
     
     def one_aggregate(self, agg_graph, node_feature, graph_type, test):
-        aggregated_feature = agg_graph @ node_feature
+        aggregated_feature = agg_graph @ node_feature 
         
         if self.conf['aug_type'] == 'MD' and not test:
             mess_dropout = self.mess_dropout_dict[graph_type]
@@ -321,7 +321,6 @@ class Demo(nn.Module):
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
         bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
-        # bpr_loss, c_loss = self.cal_loss_(users_embedding, bundles_embedding)
         
         return bpr_loss, c_loss
         
