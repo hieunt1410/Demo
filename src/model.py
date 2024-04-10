@@ -228,26 +228,16 @@ class Demo(nn.Module):
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
             
-            UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
-            UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
+            # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
+            # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
             
-            UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
-            UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)#bundle feature in UI view
-            
-        if test:
-            BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph_ori, self.bundles_feat, self.items_feat, 'BI', self.BI_layer_coefs, test)
-            BI_users_feat = self.one_aggregate(self.UI_aggregation_graph_ori, BI_items_feat, 'UI', test)
-        else:
-            BI_bundles_feat, BI_items_feat = self.one_propagate(self.BI_propagation_graph, self.bundles_feat, self.items_feat, 'BI', self.BI_layer_coefs, test)
-            BI_users_feat = self.one_aggregate(self.UI_aggregation_graph, BI_items_feat, 'UI', test)#user feature in BI view            
+            # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
+            # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)#bundle feature in UI view    
 
-        IL_bundle_feature = self.get_aug_bundle_rep(UI_items_feat)#UI_bundle_feature
-        
-        users_feature = [UB_users_feat, UI_users_feat, BI_users_feat]
-        bundles_feature = [UB_bundles_feat, UI_bundles_feat, BI_bundles_feat]
+        # IL_bundle_feature = self.get_aug_bundle_rep(UI_items_feat)#UI_bundle_feature
         
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
@@ -300,7 +290,7 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        return bpr_loss, (c_loss + u_loss) / 2
+        return bpr_loss, (a_loss + u_loss) / 2
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
