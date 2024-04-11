@@ -150,21 +150,14 @@ class Demo(nn.Module):
         
         return to_tensor(birpartite_graph).to(device)
     
-    def one_propagate(self, graph, Afeat, Bfeat, graph_type, test):
+    def one_propagate(self, graph, Afeat, Bfeat, test):
         device = self.device
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
         for i in range(self.num_layers):
             feats = torch.spmm(graph, feats)
-            if self.conf['aug_type'] == 'MD' and not test:
-                # mess_dropout = self.mess_dropout_dict[graph_type]
-                # feats = mess_dropout(feats)
-                feats /= (i + 2)
-                
-            elif self.conf['aug_type'] == 'Noise' and not test:
-                random_noise = torch.randn_like(feats).to(device)
-                feats += torch.sign(feats) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
+            feats /= (i + 2)
             
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
@@ -186,15 +179,8 @@ class Demo(nn.Module):
         
     #     return Ufeat, Ifeat, Bfeat
     
-    def one_aggregate(self, agg_graph, node_feature, graph_type, test):
+    def one_aggregate(self, agg_graph, node_feature, test):
         aggregated_feature = agg_graph @ node_feature 
-        
-        if self.conf['aug_type'] == 'MD' and not test:
-            mess_dropout = self.mess_dropout_dict[graph_type]
-            aggregated_feature = mess_dropout(aggregated_feature)
-        elif self.conf['aug_type'] == 'Noise' and not test:
-            random_noise = torch.randn_like(aggregated_feature).to(self.device)
-            aggregated_feature += torch.sign(aggregated_feature) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
 
         return aggregated_feature
     
@@ -213,21 +199,21 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, 'UB', test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, 'UB', test)#user feature in UB view, bundle feature in UB view
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
+            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, test)
             
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
+            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
             
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)#bundle feature in UI view    
