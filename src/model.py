@@ -156,7 +156,7 @@ class Demo(nn.Module):
         all_feats = [feats]
         
         for i in range(self.num_layers):
-            feats = torch.spmm(graph, feats)
+            feats = graph @ feats
             feats /= (i + 2)
             
             all_feats.append(F.normalize(feats, p=2, dim=1))
@@ -223,7 +223,7 @@ class Demo(nn.Module):
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
-        return [hist_users_rep, aff_users_rep], [hist_bundles_rep, aff_bundles_rep]
+        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep]
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       

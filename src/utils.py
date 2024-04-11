@@ -14,7 +14,6 @@ def to_tensor(graph):
     return graph
 
 
-
 def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
     ub_graph, ui_graph, bi_graph = raw_graph
     
