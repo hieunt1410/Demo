@@ -163,7 +163,8 @@ class Demo(nn.Module):
             elif self.conf['aug_type'] == 'Noise' and not test:
                 random_noise = torch.randn_like(feats).to(device)
                 feats += torch.sign(feats) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
-                
+            
+            feats /= (i + 2)
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
         all_feats = torch.stack(all_feats, dim=1)
