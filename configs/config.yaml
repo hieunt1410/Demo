@@ -6,17 +6,17 @@ Youshu:
   topk_valid: 20
 
   embedding_size: 64
-  num_layers: 2
+  num_layers: 1
 
   aff_ed_ratio: 0.5
   hist_ed_ratio: 0.5
   agg_ed_ratio: 0.5
 
-  fusion_weights:
-    modal_weight: [0.5, 0.2, 0.3]
-    UB_layer: [0.35, 0.15, 0.5]
-    UI_layer: [0.25, 0.65, 0.1]
-    BI_layer: [0.4, 0.4, 0.2] 
+  # fusion_weights:
+  #   modal_weight: [0.5, 0.2, 0.3]
+  #   UB_layer: [0.35, 0.15, 0.5]
+  #   UI_layer: [0.25, 0.65, 0.1]
+  #   BI_layer: [0.4, 0.4, 0.2] 
 
   lr: 1.0e-3
   lambda2: 1.0e-4

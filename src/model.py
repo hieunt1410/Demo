@@ -63,8 +63,8 @@ class Demo(nn.Module):
         
         self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
         self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
-        self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
+        # self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
+        # self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         
         self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
@@ -75,7 +75,7 @@ class Demo(nn.Module):
         
         self.init_md_dropouts()
         self.init_noise_eps()
-        self.init_fusion_weights()
+        # self.init_fusion_weights()
         # H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
         # self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
         
@@ -107,25 +107,25 @@ class Demo(nn.Module):
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
         
-    def init_fusion_weights(self):
-        assert (len(self.fusion_weights['modal_weight']) == 3), \
-            "The number of modal fusion weights does not correspond to the number of graphs"
+    # def init_fusion_weights(self):
+    #     assert (len(self.fusion_weights['modal_weight']) == 3), \
+    #         "The number of modal fusion weights does not correspond to the number of graphs"
 
-        assert (len(self.fusion_weights['UB_layer']) == self.num_layers + 1) and\
-               (len(self.fusion_weights['UI_layer']) == self.num_layers + 1) and \
-               (len(self.fusion_weights['BI_layer']) == self.num_layers + 1),\
-            "The number of layer fusion weights does not correspond to number of layers"
+    #     assert (len(self.fusion_weights['UB_layer']) == self.num_layers + 1) and\
+    #            (len(self.fusion_weights['UI_layer']) == self.num_layers + 1) and \
+    #            (len(self.fusion_weights['BI_layer']) == self.num_layers + 1),\
+    #         "The number of layer fusion weights does not correspond to number of layers"
             
-        modal_coefs = torch.FloatTensor(self.fusion_weights['modal_weight'])
-        UB_layer_coefs = torch.FloatTensor(self.fusion_weights['UB_layer'])
-        UI_layer_coefs = torch.FloatTensor(self.fusion_weights['UI_layer'])
-        BI_layer_coefs = torch.FloatTensor(self.fusion_weights['BI_layer'])
+    #     modal_coefs = torch.FloatTensor(self.fusion_weights['modal_weight'])
+    #     UB_layer_coefs = torch.FloatTensor(self.fusion_weights['UB_layer'])
+    #     UI_layer_coefs = torch.FloatTensor(self.fusion_weights['UI_layer'])
+    #     BI_layer_coefs = torch.FloatTensor(self.fusion_weights['BI_layer'])
 
-        self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
+    #     self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
 
-        self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
-        self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
-        self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+    #     self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+    #     self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+    #     self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
         
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
@@ -226,12 +226,14 @@ class Demo(nn.Module):
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
+            
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
             
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
+            
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
             
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
@@ -290,7 +292,7 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        return bpr_loss, (a_loss + u_loss) / 2
+        return bpr_loss, (a_loss + u_loss)
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
@@ -322,6 +324,5 @@ class Demo(nn.Module):
         aff_bundles_feat_ =  aff_bundles_feat * (1 - bundle_gamma.unsqueeze(1))
         hist_bundles_feat_ = hist_bundles_feat * bundle_gamma.unsqueeze(1)
         scores = aff_users_feat @ aff_bundles_feat_.T + hist_users_feat @ hist_bundles_feat_.T
-        # scores = aff_users_feat @ aff_bundles_feat.T + hist_users_feat @ hist_bundles_feat.T
         
         return scores
