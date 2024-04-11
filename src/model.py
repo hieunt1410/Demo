@@ -150,7 +150,7 @@ class Demo(nn.Module):
         
         return to_tensor(birpartite_graph).to(device)
     
-    def one_propagate(self, graph, Afeat, Bfeat, graph_type, layer_coef, test):
+    def one_propagate(self, graph, Afeat, Bfeat, graph_type, test):
         device = self.device
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
@@ -220,19 +220,19 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, 'UB', self.UB_layer_coefs, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, 'UB', test)
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, 'UB', self.UB_layer_coefs, test)#user feature in UB view, bundle feature in UB view
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, 'UB', test)#user feature in UB view, bundle feature in UB view
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, 'UI', test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, 'BI', test)
             
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, 'UI', test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, 'BI', test)#bundle feature in UI view
             
