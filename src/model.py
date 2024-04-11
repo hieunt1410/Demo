@@ -158,13 +158,14 @@ class Demo(nn.Module):
         for i in range(self.num_layers):
             feats = torch.spmm(graph, feats)
             if self.conf['aug_type'] == 'MD' and not test:
-                mess_dropout = self.mess_dropout_dict[graph_type]
-                feats = mess_dropout(feats)
+                # mess_dropout = self.mess_dropout_dict[graph_type]
+                # feats = mess_dropout(feats)
+                feats /= (i + 2)
+                
             elif self.conf['aug_type'] == 'Noise' and not test:
                 random_noise = torch.randn_like(feats).to(device)
                 feats += torch.sign(feats) * F.normalize(random_noise, dim=-1) * self.eps_dict[graph_type]
             
-            feats /= (i + 2)
             all_feats.append(F.normalize(feats, p=2, dim=1))
             
         all_feats = torch.stack(all_feats, dim=1)
