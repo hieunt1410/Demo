@@ -71,7 +71,7 @@ class Demo(nn.Module):
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
-        self.fusion_weights = conf['fusion_weights']
+        # self.fusion_weights = conf['fusion_weights']
         
         self.init_md_dropouts()
         self.init_noise_eps()
