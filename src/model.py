@@ -58,7 +58,7 @@ class Demo(nn.Module):
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
-        self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
+        # self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         
         self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
@@ -66,7 +66,7 @@ class Demo(nn.Module):
         # self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         
-        self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
+        # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
@@ -196,15 +196,6 @@ class Demo(nn.Module):
 
         return aggregated_feature
     
-    def fuse(self, users_feature, bundles_feature):
-        users_feats = torch.stack(users_feature, dim=0)
-        bundles_feats = torch.stack(bundles_feature, dim=0)
-        
-        users_rep = users_feature * self.modal_coefs
-        bundles_rep = bundles_feature * self.modal_coefs
-        
-        return users_rep, bundles_rep
-    
     def get_aug_bundle_rep(self, IL_item_feature):
         device = self.device
         bu_graph = self.ub_graph.T
@@ -292,7 +283,7 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        return bpr_loss, (a_loss + u_loss)
+        return bpr_loss, (a_loss + u_loss) / 2
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
@@ -301,7 +292,7 @@ class Demo(nn.Module):
             self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
             self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
             
-            self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
+            # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
         users, bundles = batch
