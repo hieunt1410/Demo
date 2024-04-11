@@ -146,7 +146,7 @@ class Demo(nn.Module):
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph + 1 / np.exp(birpartite_graph.sum(axis=0))
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
         
         return to_tensor(birpartite_graph).to(device)
     
