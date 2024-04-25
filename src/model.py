@@ -145,10 +145,11 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        # bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        item_freq = birpartite_graph.T.sum(axis=1)
+        birpartite_graph = sp.diags(1/item_freq.A.ravel()) @ birpartite_graph.T
         
-        return to_tensor(birpartite_graph).to(device)
+        return to_tensor(birpartite_graph.T).to(device)
     
     def one_propagate(self, graph, Afeat, Bfeat, test):
         device = self.device
