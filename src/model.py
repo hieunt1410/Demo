@@ -150,7 +150,7 @@ class Demo(nn.Module):
         bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
         # item_freq = birpartite_graph.T.sum(axis=1) + 1e-8
         # birpartite_graph = sp.diags(1/item_freq.A.ravel()) @ birpartite_graph.T
-        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph @ self.items_freq
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
         
         return to_tensor(birpartite_graph).to(device)
     
@@ -184,7 +184,7 @@ class Demo(nn.Module):
     #     return Ufeat, Ifeat, Bfeat
     
     def one_aggregate(self, agg_graph, node_feature, test):
-        aggregated_feature = agg_graph @ node_feature 
+        aggregated_feature = agg_graph @ self.items_freq @ node_feature 
 
         return aggregated_feature
     
