@@ -106,6 +106,8 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
+        self.items_freq = nn.Parameter(torch.FloatTensor(self.num_items, 1))
+        nn.init.xavier_normal_(self.items_freq)
         
     # def init_fusion_weights(self):
     #     assert (len(self.fusion_weights['modal_weight']) == 3), \
@@ -145,11 +147,12 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        # bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        item_freq = birpartite_graph.T.sum(axis=1) + 1e-8
-        birpartite_graph = sp.diags(1/item_freq.A.ravel()) @ birpartite_graph.T
+        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        # item_freq = birpartite_graph.T.sum(axis=1) + 1e-8
+        # birpartite_graph = sp.diags(1/item_freq.A.ravel()) @ birpartite_graph.T
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph @ self.items_freq
         
-        return to_tensor(birpartite_graph.T).to(device)
+        return to_tensor(birpartite_graph).to(device)
     
     def one_propagate(self, graph, Afeat, Bfeat, test):
         device = self.device
