@@ -107,7 +107,7 @@ class Demo(nn.Module):
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
         self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
-        nn.init.xavier_normal_(self.item_pop)
+        nn.init.xavier_normal_(self.items_pop)
         
     # def init_fusion_weights(self):
     #     assert (len(self.fusion_weights['modal_weight']) == 3), \
