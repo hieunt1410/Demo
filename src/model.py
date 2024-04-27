@@ -215,7 +215,7 @@ class Demo(nn.Module):
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat + self.items_pop, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
             
