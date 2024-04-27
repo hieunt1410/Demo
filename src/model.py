@@ -106,8 +106,8 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
-        self.items_freq = nn.Parameter(torch.FloatTensor(self.num_items, 1))
-        nn.init.xavier_normal_(self.items_freq)
+        self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
+        nn.init.xavier_normal_(self.item_pop)
         
     # def init_fusion_weights(self):
     #     assert (len(self.fusion_weights['modal_weight']) == 3), \
@@ -184,7 +184,7 @@ class Demo(nn.Module):
     #     return Ufeat, Ifeat, Bfeat
     
     def one_aggregate(self, agg_graph, node_feature, test):
-        aggregated_feature = agg_graph @ self.items_freq @ node_feature 
+        aggregated_feature = agg_graph @ node_feature 
 
         return aggregated_feature
     
@@ -202,13 +202,13 @@ class Demo(nn.Module):
         return IL_bundle_feature
     
     def propagate(self, test=False):
-        if test:
+        if test:    
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat + self.items_pop, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, test)
             
