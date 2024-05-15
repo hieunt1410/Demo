@@ -38,7 +38,7 @@ class Demo(nn.Module):
         self.num_bundles = conf['num_bundles']
         self.num_items = conf['num_items']
         self.num_layers = conf['num_layers']
-        
+        self.bz = conf['batch_size_train']
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
         self.init_embed()
@@ -285,7 +285,7 @@ class Demo(nn.Module):
     def cal_bpl_loss(self, propagate_result, users):
         device = self.device
         scores = self.evaluate(propagate_result, users)
-        c_list = groupby_apply(self.ui_graph.nonzero()[1], scores, bins=self.num_items, reduction='sum').to(device)
+        c_list = groupby_apply(self.ui_graph.nonzero()[1], scores, bins=self.bz, reduction='sum').to(device)
         
         with np.errstate(invalid='ignore'):
             r_list = c_list/(q_list**(2-self.config['gamma']))
