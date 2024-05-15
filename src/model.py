@@ -284,7 +284,7 @@ class Demo(nn.Module):
     def cal_bpl_loss(self, propagate_result, users, bundles):
         device = self.device
         
-        q_list = (self.bi_graph @ self.(ui_graph.sum(axis = 0) + 1e-8).T).A.squeeze()
+        q_list = (self.bi_graph @ (self.ui_graph.sum(axis = 0) + 1e-8).T).A.squeeze()
         
         scores = self.evaluate(propagate_result, users)
         # c_list = groupby_apply(bundles, scores, bins=self.num_bundles, reduction='sum').to(device)
