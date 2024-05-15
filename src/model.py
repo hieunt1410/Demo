@@ -288,7 +288,8 @@ class Demo(nn.Module):
         q_list = (self.bi_graph @ self.ui_graph.sum(axis = 0).T).A.squeeze()
         
         scores = self.evaluate(propagate_result, users)
-        c_list = groupby_apply(bundles, scores, bins=self.num_bundles, reduction='sum').to(device)
+        # c_list = groupby_apply(bundles, scores, bins=self.num_bundles, reduction='sum').to(device)
+        c_list = 1
         
         with np.errstate(invalid='ignore'):
             r_list = c_list/(q_list**(2-self.config['gamma']))
