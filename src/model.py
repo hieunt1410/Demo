@@ -321,7 +321,7 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        bpl_loss = self.cal_bpl_loss((aff_users_feat, hist_users_feat), torch.arange(self.num_users).to(self.device))
+        bpl_loss = self.cal_bpl_loss((users_feat, bundles_feat), torch.arange(self.num_users).to(self.device))
         
         return bpr_loss, (a_loss + u_loss + bpl_loss) / 3
 
