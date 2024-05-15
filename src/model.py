@@ -282,10 +282,13 @@ class Demo(nn.Module):
         
         return c_loss
     
-    def cal_bpl_loss(self, propagate_result, users):
+    def cal_bpl_loss(self, propagate_result, users, bundles):
         device = self.device
+        
+        q_list = self.bi_graph @ (self.ui_graph.sum(axis=0).T).mean(axis=1).toarray().squeeze()
+        
         scores = self.evaluate(propagate_result, users)
-        c_list = groupby_apply(torch.Tensor(self.ui_graph.nonzero()[1]), scores, bins=self.num_items, reduction='sum').to(device)
+        c_list = groupby_apply(bundles, scores, bins=self.num_bundles, reduction='sum').to(device)
         
         with np.errstate(invalid='ignore'):
             r_list = c_list/(q_list**(2-self.config['gamma']))
@@ -342,7 +345,7 @@ class Demo(nn.Module):
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
         bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
-        bpl_loss = self.cal_bpl_loss([users_feat, bundles_feat], users)
+        bpl_loss = self.cal_bpl_loss([users_feat, bundles_feat], users, bundles)
         
         return bpr_loss, c_loss + bpl_loss
         
