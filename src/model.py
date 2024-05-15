@@ -52,8 +52,8 @@ class Demo(nn.Module):
         # self.get_aff_graph_ori()
         # self.get_hist_graph_ori()
         # self.get_agg_graph_ori()
-        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        # self.UI_aggregation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        self.UI_aggregation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         # self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
@@ -62,8 +62,8 @@ class Demo(nn.Module):
         # self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
-        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
@@ -167,14 +167,18 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
             
-        # items_pop = self.ui_graph.T @ self.ui_graph
-        items_pop = self.ui_graph.sum(axis=0)
+        items_pop = self.ui_graph.T @ self.ui_graph
         
-        return to_tensor(birpartite_graph @ items_pop.T).to(device)
+        return to_tensor(birpartite_graph @ items_pop).to(device)
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
         propagation_graph = sp.bmat([[sp.csr_matrix((bipartite_graph.shape[0], bipartite_graph.shape[0])), bipartite_graph], [bipartite_graph.T, sp.csr_matrix((bipartite_graph.shape[1], bipartite_graph.shape[1]))]])
+        
+        if modification_ratio:
+            graph = propagation_graph.tocoo()
+            values = np_edge_dropout(graph.data, modification_ratio)
+            propagation_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         degree = np.array(propagation_graph.sum(axis=1)).squeeze()
         degree = np.maximum(1., degree)
@@ -183,7 +187,8 @@ class Demo(nn.Module):
         
         # norm_adj = d_mat.dot(propagation_graph).dot(d_mat)
         norm_adj = d_mat @ propagation_graph @ d_mat
-        norm_adj = get_sparse_tensor(norm_adj, self.device)
+        
+        norm_adj = to_tensor(norm_adj).to(device)
         return norm_adj        
         
         
