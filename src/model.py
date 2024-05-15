@@ -285,7 +285,7 @@ class Demo(nn.Module):
     def cal_bpl_loss(self, propagate_result, users):
         device = self.device
         scores = self.evaluate(propagate_result, users)
-        c_list = groupby_apply(self.ui_graph.nonzero()[1], scores, bins=self.num_items, reduction='sum').to(device)
+        c_list = groupby_apply(torch.Tensor(self.ui_graph.nonzero()[1]), scores, bins=self.num_items, reduction='sum').to(device)
         
         with np.errstate(invalid='ignore'):
             r_list = c_list/(q_list**(2-self.config['gamma']))
