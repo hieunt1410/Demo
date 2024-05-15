@@ -291,9 +291,9 @@ class Demo(nn.Module):
         c_list = 1
         
         with np.errstate(invalid='ignore'):
-            r_list = c_list/(q_list**(2-self.conf['lambda1']))
+            r_list = c_list/(q_list**(2-1.552))
         
-        bpl_loss = self.config['lambda_f']*torch.sqrt(torch.var(r_list))
+        bpl_loss = self.conf['lambda1']*torch.sqrt(torch.var(r_list))
 
         return bpl_loss
         
