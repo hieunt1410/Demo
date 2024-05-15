@@ -321,9 +321,7 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        bpl_loss = self.cal_bpl_loss((users_feat, bundles_feat), torch.arange(self.num_users).to(self.device))
-        
-        return bpr_loss, (a_loss + u_loss + bpl_loss) / 3
+        return bpr_loss, (a_loss + u_loss) / 2
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
@@ -344,8 +342,9 @@ class Demo(nn.Module):
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
         bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        bpl_loss = self.cal_bpl_loss([users_feat, bundles_feat], users)
         
-        return bpr_loss, c_loss
+        return bpr_loss, c_loss + bpl_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
