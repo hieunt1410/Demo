@@ -61,3 +61,19 @@ def split_hypergraph(H, device, split_num=16):
     H_split = [to_tensor(H_i).to(device) for H_i in H_list]
     
     return H_split
+
+def groupby_apply(keys: torch.Tensor, values: torch.Tensor, bins: int = 95, reduction: str = "mean", return_histogram: bool = False):
+    if reduction == "mean":
+        reduce = torch.mean
+    elif reduction == "sum":
+        reduce = torch.sum
+    else:
+        raise ValueError(f"Unknown reduction '{reduction}'")
+    uniques, counts = keys.unique(return_counts=True)
+    groups = torch.stack([reduce(item) for item in torch.split_with_sizes(values, tuple(counts))])
+    reduced = torch.zeros(bins, dtype=values.dtype, device=values.device).scatter(dim=0, index=uniques, src=groups)
+    if return_histogram:
+        hist = torch.zeros(bins, dtype=torch.long, device=values.device).scatter(dim=0, index=uniques, src=counts)
+        return reduced, hist
+    else:
+        return reduced

@@ -54,23 +54,25 @@ class Demo(nn.Module):
         # self.get_hist_graph_ori()
         # self.get_agg_graph_ori()
         self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
+        # self.UI_aggregation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         # self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
-        # self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
-        self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
+        self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
+        # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
         self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         
         # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
-        # self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
-        self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
+        self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
+        # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
@@ -111,6 +113,8 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.items_feat)
         self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_pop)
+        self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
+        nn.init.xavier_normal_(self.embedding.weight)
         
     # def init_fusion_weights(self):
     #     assert (len(self.fusion_weights['modal_weight']) == 3), \
@@ -168,6 +172,21 @@ class Demo(nn.Module):
         
         return to_tensor(birpartite_graph @ items_pop).to(device)
     
+    def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
+        device = self.device
+        propagation_graph = sp.bmat([[sp.csr_matrix((bipartite_graph.shape[0], bipartite_graph.shape[0])), bipartite_graph], [bipartite_graph.T, sp.csr_matrix((bipartite_graph.shape[1], bipartite_graph.shape[1]))]])
+        
+        degree = np.array(propagation_graph.sum(axis=1)).squeeze()
+        degree = np.maximum(1., degree)
+        d_inv = np.power(degree, -0.5)
+        d_mat = sp.diags(d_inv, format='csr', dtype=np.float32)
+        
+        # norm_adj = d_mat.dot(propagation_graph).dot(d_mat)
+        norm_adj = d_mat @ propagation_graph @ d_mat
+        norm_adj = get_sparse_tensor(norm_adj, self.device)
+        return norm_adj        
+        
+        
     def one_propagate(self, graph, Afeat, Bfeat, test):
         device = self.device
         feats = torch.cat((Afeat, Bfeat), dim=0)
@@ -261,7 +280,20 @@ class Demo(nn.Module):
         
         c_loss = -torch.mean(torch.log(torch.exp(pos_score / 1) / ttl_score))
         
-        return c_loss        
+        return c_loss
+    
+    def cal_bpl_loss(self, propagate_result, users):
+        device = self.device
+        scores = self.evaluate(propagate_result, users)
+        c_list = groupby_apply(self.ui_graph.nonzero()[1], scores, bins=self.num_items, reduction='sum').to(device)
+        
+        with np.errstate(invalid='ignore'):
+            r_list = c_list/(q_list**(2-self.config['gamma']))
+        
+        bpl_loss = self.config['lambda_f']*torch.sqrt(torch.var(r_list))
+
+        return bpl_loss
+        
     
     def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
         aff_users_feat, hist_users_feat = users_feat
@@ -289,7 +321,9 @@ class Demo(nn.Module):
         c_loss = (bundle_c_loss + user_c_loss) 
         a_loss = (bundle_align + user_align)
         
-        return bpr_loss, (a_loss + u_loss) / 2
+        bpl_loss = self.cal_bpl_loss((aff_users_feat, hist_users_feat), torch.arange(self.num_users).to(self.device))
+        
+        return bpr_loss, (a_loss + u_loss + bpl_loss) / 3
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
