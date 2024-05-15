@@ -346,7 +346,6 @@ class Demo(nn.Module):
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
         bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
-        bpl_loss = self.cal_bpl_loss([users_feat, bundles_feat], users, bundles)
         
         return bpr_loss, c_loss
         
