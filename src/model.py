@@ -59,8 +59,8 @@ class Demo(nn.Module):
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         # self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
-        self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
-        # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
+        # self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
+        self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
         self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
@@ -70,8 +70,8 @@ class Demo(nn.Module):
         
         # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
-        self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
-        # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
+        # self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
+        self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
@@ -167,7 +167,8 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
             
-        items_pop = self.ui_graph.T @ self.ui_graph
+        # items_pop = self.ui_graph.T @ self.ui_graph
+        items_pop = self.ui_graph.sum(axis=0)
         
         return to_tensor(birpartite_graph @ items_pop).to(device)
     
@@ -331,7 +332,7 @@ class Demo(nn.Module):
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
             
             self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
-            self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            # self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
             
             # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
@@ -347,7 +348,7 @@ class Demo(nn.Module):
         bpr_loss, c_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
         bpl_loss = self.cal_bpl_loss([users_feat, bundles_feat], users, bundles)
         
-        return bpr_loss, c_loss + bpl_loss
+        return bpr_loss, c_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
