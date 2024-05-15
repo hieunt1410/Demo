@@ -288,7 +288,7 @@ class Demo(nn.Module):
         
         scores = self.evaluate(propagate_result, users)
         # c_list = groupby_apply(bundles, scores, bins=self.num_bundles, reduction='sum').to(device)
-        c_list = torch.Tensor([1] * len(q_list)).to(device)
+        c_list = torch.Tensor([1] * len(q_list))
         
         with np.errstate(invalid='ignore'):
             r_list = c_list/(q_list**(2-1.552))
