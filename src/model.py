@@ -38,7 +38,6 @@ class Demo(nn.Module):
         self.num_bundles = conf['num_bundles']
         self.num_items = conf['num_items']
         self.num_layers = conf['num_layers']
-        self.bz = conf['batch_size_train']
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
         self.init_embed()
@@ -292,7 +291,7 @@ class Demo(nn.Module):
         c_list = 1
         
         with np.errstate(invalid='ignore'):
-            r_list = c_list/(q_list**(2-self.config['gamma']))
+            r_list = c_list/(q_list**(2-self.conf['lambda1']))
         
         bpl_loss = self.config['lambda_f']*torch.sqrt(torch.var(r_list))
 
