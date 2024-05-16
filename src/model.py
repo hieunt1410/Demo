@@ -99,7 +99,7 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
-        self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
+        self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.num_items))
         nn.init.xavier_normal_(self.items_pop)
         self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
@@ -145,9 +145,9 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
             
-        # items_pop = self.ui_graph.T @ self.ui_graph
+        items_pop = self.ui_graph.T @ self.ui_graph
         
-        return to_tensor(birpartite_graph @ self.items_pop).to(device)
+        return to_tensor(birpartite_graph).to(device)
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
@@ -200,7 +200,7 @@ class Demo(nn.Module):
     #     return Ufeat, Ifeat, Bfeat
     
     def one_aggregate(self, agg_graph, node_feature, test):
-        aggregated_feature = agg_graph @ node_feature 
+        aggregated_feature = agg_graph @ @ self.items_pop @ node_feature 
 
         return aggregated_feature
     
