@@ -99,7 +99,7 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
-        self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.num_items))
+        self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_pop)
         self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
@@ -200,7 +200,7 @@ class Demo(nn.Module):
     #     return Ufeat, Ifeat, Bfeat
     
     def one_aggregate(self, agg_graph, node_feature, test):
-        aggregated_feature = agg_graph @ self.items_pop @ node_feature 
+        aggregated_feature = agg_graph @ (node_feature + self.items_pop) 
 
         return aggregated_feature
     
