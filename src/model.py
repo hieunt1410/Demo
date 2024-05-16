@@ -221,8 +221,8 @@ class Demo(nn.Module):
         # self.ui_graph, self.bi_graph = self.apply_pop(self.ui_graph, self.bi_graph, self.items_pop)
         # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
         # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
-        self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
-        self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
+        # self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
+        # self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
         if test:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
