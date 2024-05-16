@@ -200,7 +200,7 @@ class Demo(nn.Module):
     #     return Ufeat, Ifeat, Bfeat
     
     def one_aggregate(self, agg_graph, node_feature, test):
-        aggregated_feature = agg_graph @ @ self.items_pop @ node_feature 
+        aggregated_feature = agg_graph @ self.items_pop @ node_feature 
 
         return aggregated_feature
     
