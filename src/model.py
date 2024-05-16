@@ -145,9 +145,9 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
             
-        items_pop = self.ui_graph.T @ self.ui_graph
+        # items_pop = self.ui_graph.T @ self.ui_graph
         
-        return to_tensor(birpartite_graph @ items_pop).to(device)
+        return to_tensor(birpartite_graph @ self.items_pop).to(device)
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
@@ -218,13 +218,13 @@ class Demo(nn.Module):
         return IL_bundle_feature
     
     def propagate(self, test=False):
-        self.ui_graph, self.bi_graph = self.apply_pop(self.ui_graph, self.bi_graph, self.items_pop)
-        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+        # self.ui_graph, self.bi_graph = self.apply_pop(self.ui_graph, self.bi_graph, self.items_pop)
+        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
-        if test:    
+        if test:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
