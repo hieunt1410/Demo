@@ -43,15 +43,9 @@ class Demo(nn.Module):
         self.init_embed()
         
         self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
+        self.ui_graph, self.bi_graph = self.apply_pop(self.ui_graph, self.bi_graph, self.items_pop)
         
-        # self.get_aff_graph()
-        # self.get_hist_graph()
-        # self.get_agg_graph()
-        # self.get_aug_bundle_agg_graph()
         
-        # self.get_aff_graph_ori()
-        # self.get_hist_graph_ori()
-        # self.get_agg_graph_ori()
         self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
         # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         # self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
@@ -114,26 +108,14 @@ class Demo(nn.Module):
         self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
         
-    def pop_apply(self, Ufeat, Bfeat, items_pop):
-        device = self.device
-        feats = sp.bmat(([Ufeat], [Bfeat]))
-        all_feats = [feats]
         
-        for i in range(self.num_layers):
-            feats = feats @ items_pop
-            feats /= (i + 2)
-            
-            all_feats.append(F.normalize(feats, p=2, dim=1))
-            
-        all_feats = torch.stack(all_feats, dim=1)
-        all_feats = torch.sum(all_feats, dim=1).squeeze(1)
+    def apply_pop(self, ui_graph, bi_graph, items_pop):
+        ubi = sp.bmat([[ui_graph],[bi_graph]])
+        ubi = ubi @ items_pop
+        ui, bi = torch.split(ubi, [self.num_users, self.num_items], dim=0)
         
-        # Ufeat, Bfeat = torch.split(all_feats, (Ufeat.shape[0], Bfeat.shape[0]), 0)
-        Ufeat = all_feats[:Ufeat.shape[0]]
-        Bfeat = all_feats[Ufeat.shape[0]:]
-        
-        return Ufeat, Bfeat
-        
+        return ui, bi
+    
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
         propagation_graph = sp.bmat([[sp.csr_matrix((bipartite_graph.shape[0], bipartite_graph.shape[0])), bipartite_graph], [bipartite_graph.T, sp.csr_matrix((bipartite_graph.shape[1], bipartite_graph.shape[1]))]])
@@ -245,14 +227,14 @@ class Demo(nn.Module):
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat - self.items_pop, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, test)
             
             # UI_aug_users_feat, UI_aug_items_feat = self.one_propagate(self.UI_aug_propagation_graph, self.users_feat, self.items_feat, 'UI', self.UI_layer_coefs, test)
             # UI_aug_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_aug_items_feat, 'BI', test)
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat - self.items_pop, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
             
