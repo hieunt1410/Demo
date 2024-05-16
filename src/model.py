@@ -116,7 +116,7 @@ class Demo(nn.Module):
         
     def pop_apply(self, Ufeat, Bfeat, items_pop):
         device = self.device
-        feats = sp.bmat(([bi_graph], [ui_graph]))
+        feats = sp.bmat(([Ufeat], [Bfeat]))
         all_feats = [feats]
         
         for i in range(self.num_layers):
