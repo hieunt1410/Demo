@@ -68,9 +68,6 @@ class Demo(nn.Module):
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
-        self.UI_propagation_graph_ori, self.BI_aggregation_graph_ori = self.pop_apply(self.UI_propagation_graph_ori, self.BI_aggregation_graph_ori, self.items_pop)
-        self.UI_propagation_graph, self.BI_aggregation_graph = self.pop_apply(self.UI_propagation_graph, self.BI_aggregation_graph, self.items_pop)
-        
         self.init_md_dropouts()
         self.init_noise_eps()
         
