@@ -116,7 +116,7 @@ class Demo(nn.Module):
         
     def pop_apply(self, Ufeat, Bfeat, items_pop):
         device = self.device
-        feats = torch.cat((Ufeat, Bfeat), dim=0)
+        feats = sp.bmat(([bi_graph], [ui_graph]))
         all_feats = [feats]
         
         for i in range(self.num_layers):
@@ -128,7 +128,9 @@ class Demo(nn.Module):
         all_feats = torch.stack(all_feats, dim=1)
         all_feats = torch.sum(all_feats, dim=1).squeeze(1)
         
-        Ufeat, Bfeat = torch.split(all_feats, (Ufeat.shape[0], Bfeat.shape[0]), 0)
+        # Ufeat, Bfeat = torch.split(all_feats, (Ufeat.shape[0], Bfeat.shape[0]), 0)
+        Ufeat = all_feats[:Ufeat.shape[0]]
+        Bfeat = all_feats[Ufeat.shape[0]:]
         
         return Ufeat, Bfeat
         
