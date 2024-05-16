@@ -52,36 +52,35 @@ class Demo(nn.Module):
         # self.get_aff_graph_ori()
         # self.get_hist_graph_ori()
         # self.get_agg_graph_ori()
-        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         # self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         # self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
-        # self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
-        self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
+        self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
+        # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
-        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_propagation_graph = self.get_propagation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         # self.UI_aug_aggregation_graph = self.get_aggregation_graph(self.new_ui_graph, conf['aff_ed_ratio'])
         
         # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
-        # self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
-        self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
+        self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
+        # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
-        # self.fusion_weights = conf['fusion_weights']
+        self.UI_propagation_graph_ori, self.BI_aggregation_graph_ori = self.pop_apply(self.UI_propagation_graph_ori, self.BI_aggregation_graph_ori, self.items_pop)
+        self.UI_propagation_graph, self.BI_aggregation_graph = self.pop_apply(self.UI_propagation_graph, self.BI_aggregation_graph, self.items_pop)
         
         self.init_md_dropouts()
         self.init_noise_eps()
-        # self.init_fusion_weights()
-        # H = mix_graph((self.ub_graph, self.ui_graph, self.bi_graph), self.num_users, self.num_items, self.num_bundles)
-        # self.atom_graph = split_hypergraph(normalize_Hyper(H), self.device)
+        
         
     def init_md_dropouts(self):
         self.UB_dropout = nn.Dropout(self.conf['hist_ed_ratio'])
@@ -115,25 +114,23 @@ class Demo(nn.Module):
         self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
         
-    # def init_fusion_weights(self):
-    #     assert (len(self.fusion_weights['modal_weight']) == 3), \
-    #         "The number of modal fusion weights does not correspond to the number of graphs"
-
-    #     assert (len(self.fusion_weights['UB_layer']) == self.num_layers + 1) and\
-    #            (len(self.fusion_weights['UI_layer']) == self.num_layers + 1) and \
-    #            (len(self.fusion_weights['BI_layer']) == self.num_layers + 1),\
-    #         "The number of layer fusion weights does not correspond to number of layers"
+    def pop_apply(self, Ufeat, Bfeat, items_pop):
+        device = self.device
+        feats = torch.cat((Ufeat, Bfeat), dim=0)
+        all_feats = [feats]
+        
+        for i in range(self.num_layers):
+            feats = feats @ items_pop
+            feats /= (i + 2)
             
-    #     modal_coefs = torch.FloatTensor(self.fusion_weights['modal_weight'])
-    #     UB_layer_coefs = torch.FloatTensor(self.fusion_weights['UB_layer'])
-    #     UI_layer_coefs = torch.FloatTensor(self.fusion_weights['UI_layer'])
-    #     BI_layer_coefs = torch.FloatTensor(self.fusion_weights['BI_layer'])
-
-    #     self.modal_coefs = modal_coefs.unsqueeze(-1).unsqueeze(-1).to(self.device)
-
-    #     self.UB_layer_coefs = UB_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
-    #     self.UI_layer_coefs = UI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
-    #     self.BI_layer_coefs = BI_layer_coefs.unsqueeze(0).unsqueeze(-1).to(self.device)
+            all_feats.append(F.normalize(feats, p=2, dim=1))
+            
+        all_feats = torch.stack(all_feats, dim=1)
+        all_feats = torch.sum(all_feats, dim=1).squeeze(1)
+        
+        Ufeat, Bfeat = torch.split(all_feats, (Ufeat.shape[0], Bfeat.shape[0]), 0)
+        
+        return Ufeat, Bfeat
         
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
