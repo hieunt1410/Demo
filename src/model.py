@@ -147,7 +147,7 @@ class Demo(nn.Module):
             
         items_pop = self.ui_graph.T @ self.ui_graph
         
-        return to_tensor(birpartite_graph).to(device)
+        return to_tensor(birpartite_graph @ items_pop).to(device)
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
