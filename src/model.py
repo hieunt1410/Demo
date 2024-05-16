@@ -108,7 +108,7 @@ class Demo(nn.Module):
     def apply_pop(self, ui_graph, bi_graph, items_pop):
         ubi = sp.bmat([[ui_graph],[bi_graph]])
         ubi = to_tensor(ubi).to(self.device)
-        ubi = torch.FloatTensor(ubi @ items_pop)
+        ubi = (ubi @ items_pop)
         ui, bi = torch.split(ubi, [self.num_users, self.num_items], dim=0)
         
         return ui, bi
