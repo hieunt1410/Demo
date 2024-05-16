@@ -164,7 +164,7 @@ class Demo(nn.Module):
         d_mat = sp.diags(d_inv, format='csr', dtype=np.float32)
         
         # norm_adj = d_mat.dot(propagation_graph).dot(d_mat)
-        norm_adj = d_mat @ propagation_graph @ d_mat
+        norm_adj = propagation_graph @ d_mat
         
         norm_adj = to_tensor(norm_adj).to(device)
         return norm_adj        
