@@ -111,7 +111,7 @@ class Demo(nn.Module):
         ubi = (ubi @ items_pop)
         ui, bi = torch.split(ubi, [self.num_users, self.num_bundles], dim=0)
         
-        return ui.detach().cpu(), bi.detach().cpu()
+        return ui.detach().cpu().to_sparse(), bi.detach().cpu().to_sparse()
     
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
