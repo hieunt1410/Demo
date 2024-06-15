@@ -104,14 +104,6 @@ class Demo(nn.Module):
         self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
         
-        
-    def apply_pop(self, ui_graph, bi_graph, items_pop):
-        ubi = sp.bmat([[ui_graph],[bi_graph]])
-        ubi = to_tensor(ubi).to(self.device)
-        ubi = (ubi @ items_pop)
-        ui, bi = torch.split(ubi, [self.num_users, self.num_bundles], dim=0)
-        
-        return sp.csr_matrix(ui.detach().cpu()), sp.csr_matrix(bi.detach().cpu())
     
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
@@ -188,19 +180,10 @@ class Demo(nn.Module):
         
         return Afeat, Bfeat
     
-    # def hyper_propagate(self, graph, Ufeat, Ifeat, Bfeat, mess_dropout, test):
-    #     feats = torch.cat([Ufeat, Ifeat, Bfeat], dim=0)
-    #     all_feats = torch.cat([G @ feats for G in self.atom_graph], dim=0)
-    #     all_feats = feats / 2 + mess_dropout(all_feats) / 3
-        
-    #     Ufeat, Ifeat, Bfeat = torch.split(
-    #         all_feats, [Ufeat.shape[0], Ifeat.shape[0], Bfeat.shape[0]], dim=0
-    #     )
-        
-    #     return Ufeat, Ifeat, Bfeat
     
-    def one_aggregate(self, agg_graph, node_feature, test):
-        aggregated_feature = agg_graph @ (node_feature) 
+    def one_aggregate(self, bundle_agg_graph, user_agg_graph, node_feature, test):
+        item_attn = (bi_graph.sum(axis=0).T @ ui_graph.sum(axis=0) @ node_feature)
+        aggregated_feature = agg_graph @ node_feature        
 
         return aggregated_feature
     
