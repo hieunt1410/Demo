@@ -182,8 +182,8 @@ class Demo(nn.Module):
     
     
     def one_aggregate(self, bundle_agg_graph, user_agg_graph, node_feature, test):
-        item_attn = (bi_graph.sum(axis=0).T @ ui_graph.sum(axis=0) @ node_feature)
-        aggregated_feature = agg_graph @ node_feature        
+        item_attn = (bundle_agg_graph.sum(axis=0).T @ user_agg_graph.sum(axis=0) @ node_feature)
+        aggregated_feature = bundle_agg_graph @ node_feature        
 
         return aggregated_feature
     
