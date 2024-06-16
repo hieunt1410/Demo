@@ -98,9 +98,8 @@ class Demo(nn.Module):
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
         self.A = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
-        nn.init.xavier_normal_(self.items_pop)
-        self.A = nn.Embedding(self.num_items, self.embedding_size)
-        nn.init.xavier_normal_(self.embedding.weight)
+        nn.init.xavier_normal_(self.A)
+
         
     
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
