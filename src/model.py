@@ -117,23 +117,18 @@ class Demo(nn.Module):
         device = self.device
         if modification_ratio:
             graph = birpartite_graph.tocoo()
-            values = np_edge_dropout(graph.data, modification_ratio)
-            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+            be = []
+            for b in range(graph.shape[0]):
+                idx = graph[b].nonzero()[1]
+                w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0)
+                be += w.reshape(1, -1).tolist()[0]
+            be = np_edge_dropout(be, modification_ratio)
+            birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
+            # values = np_edge_dropout(graph.data, modification_ratio)
+            # birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
         # birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
-        
-        be = []
-        with torch.no_grad():
-            for b in range(birpartite_graph.shape[0]):
-                idx = birpartite_graph[b].nonzero()[1]
-                w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0)
-                be.append(torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
-        
-            graph = birpartite_graph.tocoo()
-            one_d_list = [item for sublist in be for item in sublist]
-            print(one_d_list.shape, graph.row.shape, graph.col.shape, graph.shape)
-            birpartite_graph = sp.coo_matrix((one_d_list, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(birpartite_graph).to(device)
     
