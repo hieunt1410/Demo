@@ -126,7 +126,7 @@ class Demo(nn.Module):
         be = []
         for b in range(birpartite_graph.shape[0]):
             idx = birpartite_graph[b].nonzero()[1]
-            w = F.softmax(ui_graph.T[idx].sum(axis=1), dim=0)
+            w = F.softmax(self.ui_graph.T[idx].sum(axis=1), dim=0)
             be += (torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
         
         birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
