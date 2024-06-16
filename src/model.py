@@ -118,8 +118,8 @@ class Demo(nn.Module):
         if modification_ratio:
             graph = birpartite_graph.tocoo()
             be = []
-            for b in range(graph.shape[0]):
-                idx = graph[b].nonzero()[1]
+            for b in range(birpartite_graph.shape[0]):
+                idx = birpartite_graph[b].nonzero()[1]
                 w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0)
                 be += w.reshape(1, -1).tolist()[0]
             be = np_edge_dropout(be, modification_ratio)
