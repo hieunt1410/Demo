@@ -128,10 +128,10 @@ class Demo(nn.Module):
             for b in range(birpartite_graph.shape[0]):
                 idx = birpartite_graph[b].nonzero()[1]
                 w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0)
-                be += (torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
+                be.append(torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
         
             graph = birpartite_graph.tocoo()
-            print(be.shape, graph.row.shape, graph.col.shape)
+            be = np.array(be).flatten()
             birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(birpartite_graph).to(device)
