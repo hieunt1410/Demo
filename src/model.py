@@ -99,7 +99,7 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.items_feat)
         self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_pop)
-        self.embedding = nn.Embedding(self.num_users + self.num_items, self.embedding_size)
+        self.A = nn.Embedding(self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
         
     
@@ -122,9 +122,15 @@ class Demo(nn.Module):
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        # item_freq = birpartite_graph.T.sum(axis=1) + 1e-8
-        # birpartite_graph = sp.diags(1/item_freq.A.ravel()) @ birpartite_graph.T
-        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        # birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        
+        be = []
+        for b in range(birpartite_graph.shape[0]):
+            idx = birpartite_graph[b].nonzero()[1]
+            w = F.softmax(torch.sum(self.ui_graph.T[idx],dim=1), dim=0)
+            be += (torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
+        
+        birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(birpartite_graph).to(device)
     
@@ -179,32 +185,12 @@ class Demo(nn.Module):
         return Afeat, Bfeat
     
     
-    def one_aggregate(self, bundle_agg_graph, user_agg_graph, node_feature, test):
-        item_attn = (bundle_agg_graph.sum(axis=0).T @ user_agg_graph.sum(axis=0) @ node_feature)
-        aggregated_feature = bundle_agg_graph @ item_attn        
-
+    def one_aggregate(self, bundle_agg_graph, node_feature, test):
+        aggregated_feature = bundle_agg_graph @ node_feature
+        
         return aggregated_feature
     
-    def get_aug_bundle_rep(self, IL_item_feature):
-        device = self.device
-        bu_graph = self.ub_graph.T
-        
-        UI_bundle_feature = self.UI_aggregation_graph @ IL_item_feature
-        bundle_size = bu_graph.sum(axis=1) + 1e-8
-        bu_graph = sp.diags(1/bundle_size.A.ravel()) @ bu_graph
-        self.bundle_agg_graph_BU = to_tensor(bu_graph).to(device)
-        
-        IL_bundle_feature = self.bundle_agg_graph_BU @ UI_bundle_feature
-        
-        return IL_bundle_feature
-    
-    def propagate(self, test=False):
-        # self.ui_graph, self.bi_graph = self.apply_pop(self.ui_graph, self.bi_graph, self.items_pop)
-        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
-        # self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
-        # self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
-        
+    def propagate(self, test=False):       
         if test:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
@@ -213,12 +199,12 @@ class Demo(nn.Module):
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, self.ui_graph, UI_items_feat, test)
+            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, test)
 
         else:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, self.ui_graph, UI_items_feat, test)#bundle feature in UI view
+            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
 
         # IL_bundle_feature = self.get_aug_bundle_rep(UI_items_feat)#UI_bundle_feature
         
