@@ -129,6 +129,7 @@ class Demo(nn.Module):
             w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0)
             be += (torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
         
+        graph = birpartite_graph.tocoo()
         birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(birpartite_graph).to(device)
