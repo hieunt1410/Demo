@@ -131,8 +131,8 @@ class Demo(nn.Module):
                 be.append(torch.sum(w.unsqueeze(1) * self.items_feat[idx], dim=0) + self.bundles_feat[b])
         
             graph = birpartite_graph.tocoo()
-            be = np.array(be).flatten()
-            birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
+            one_d_list = [item for sublist in be for item in sublist]
+            birpartite_graph = sp.coo_matrix((one_d_list, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(birpartite_graph).to(device)
     
