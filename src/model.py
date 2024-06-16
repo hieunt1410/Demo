@@ -97,7 +97,7 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
-        self.items_pop = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
+        self.A = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_pop)
         self.A = nn.Embedding(self.num_items, self.embedding_size)
         nn.init.xavier_normal_(self.embedding.weight)
