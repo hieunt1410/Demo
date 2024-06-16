@@ -132,6 +132,7 @@ class Demo(nn.Module):
         
             graph = birpartite_graph.tocoo()
             one_d_list = [item for sublist in be for item in sublist]
+            print(one_d_list.shape, graph.row.shape, graph.col.shape, graph.shape)
             birpartite_graph = sp.coo_matrix((one_d_list, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(birpartite_graph).to(device)
