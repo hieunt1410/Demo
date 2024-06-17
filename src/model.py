@@ -130,7 +130,7 @@ class Demo(nn.Module):
         bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
         # birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
         
-        return to_tensor(birpartite_graph).to(device)
+        return to_tensor(laplace_transform(birpartite_graph)).to(device)
     
     def get_bundle_agg_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
@@ -229,24 +229,7 @@ class Demo(nn.Module):
         
         c_loss = -torch.mean(torch.log(torch.exp(pos_score / 1) / ttl_score))
         
-        return c_loss
-    
-    def cal_bpl_loss(self, propagate_result, users, bundles):
-        device = self.device
-        
-        q_list = (self.bi_graph @ (self.ui_graph.sum(axis = 0) + 1e-8).T).A.squeeze()
-        
-        scores = self.evaluate(propagate_result, users)
-        # c_list = groupby_apply(bundles, scores, bins=self.num_bundles, reduction='sum').to(device)
-        c_list = torch.Tensor([1] * len(q_list))
-        
-        with np.errstate(invalid='ignore'):
-            r_list = c_list/(q_list**(2-1.552))
-        
-        bpl_loss = self.conf['lambda1']*torch.sqrt(torch.var(r_list))
-
-        return bpl_loss
-        
+        return c_loss        
     
     def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
         aff_users_feat, hist_users_feat = users_feat
