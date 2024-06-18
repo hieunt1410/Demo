@@ -70,6 +70,7 @@ class Demo(nn.Module):
         self.init_noise_eps()
         
         
+        
     def init_md_dropouts(self):
         self.UB_dropout = nn.Dropout(self.conf['hist_ed_ratio'])
         self.UI_dropout = nn.Dropout(self.conf['aff_ed_ratio'])
@@ -115,22 +116,25 @@ class Demo(nn.Module):
     
     def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
+        # if modification_ratio:
+        graph = birpartite_graph.tocoo()
+        be = []
+        for b in range(birpartite_graph.shape[0]):
+            idx = birpartite_graph[b].nonzero()[1]
+            w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
+            be += w.reshape(1, -1).tolist()[0]
+        be = np_edge_dropout(be, modification_ratio)
+        birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
+
         if modification_ratio:
             graph = birpartite_graph.tocoo()
-            be = []
-            for b in range(birpartite_graph.shape[0]):
-                idx = birpartite_graph[b].nonzero()[1]
-                w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
-                be += w.reshape(1, -1).tolist()[0]
-            be = np_edge_dropout(be, modification_ratio)
-            birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
-            # values = np_edge_dropout(graph.data, modification_ratio)
-            # birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+            values = np_edge_dropout(graph.data, modification_ratio)
+            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        # bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
         # birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
         
-        return to_tensor(laplace_transform(birpartite_graph)).to(device)
+        return to_tensor(birpartite_graph).to(device)
     
     def get_bundle_agg_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
