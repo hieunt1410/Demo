@@ -101,8 +101,6 @@ class Demo(nn.Module):
         self.A = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.A)
 
-        
-    
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
         propagation_graph = sp.bmat([[sp.csr_matrix((bipartite_graph.shape[0], bipartite_graph.shape[0])), bipartite_graph], [bipartite_graph.T, sp.csr_matrix((bipartite_graph.shape[1], bipartite_graph.shape[1]))]])
@@ -117,6 +115,7 @@ class Demo(nn.Module):
     def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
         # if modification_ratio:
+        print(device)
         graph = birpartite_graph.tocoo()
         be = []
         for b in range(birpartite_graph.shape[0]):
