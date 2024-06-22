@@ -47,16 +47,16 @@ class Demo(nn.Module):
         self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
         
         
-        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
-        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
@@ -166,10 +166,9 @@ class Demo(nn.Module):
         d_mat = sp.diags(d_inv, format='csr', dtype=np.float32)
         
         # norm_adj = d_mat.dot(propagation_graph).dot(d_mat)
-        norm_adj = propagation_graph @ d_mat
+        norm_adj = d_mat @ propagation_graph @ d_mat
         
-        norm_adj = to_tensor(norm_adj).to(device)
-        return norm_adj        
+        return to_tensor(norm_adj).to(device)        
         
         
     def one_propagate(self, graph, Afeat, Bfeat, test):
