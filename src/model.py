@@ -209,7 +209,7 @@ class Demo(nn.Module):
         mat = mat * values
         
         new_indices = indices[0].unsqueeze(1).expand(end_emb.shape)
-        mat = torch.mul(self.eps_dict['UI'](end_emb), mat.unsqueeze(1).expand(end_emb.shape))
+        mat = torch.mul(self.mess_dropout_dict['UI'](end_emb), mat.unsqueeze(1).expand(end_emb.shape))
                 
         update_all_emb = torch.zeros(emb.shape).to(self.device)
         update_all_emb.scatter_add_(0, new_indices, mat)
