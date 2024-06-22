@@ -40,6 +40,8 @@ class Demo(nn.Module):
         self.num_layers = conf['num_layers']
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
+        self.residual_coff = conf['residual_coff']
+        
         self.init_embed()
         
         self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
@@ -107,27 +109,34 @@ class Demo(nn.Module):
         
         return to_tensor(laplace_transform(propagation_graph)).to(device)
     
+    # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
+    #     device = self.device
+    #     graph = birpartite_graph.tocoo()
+    #     be = []
+    #     for b in range(birpartite_graph.shape[0]):
+    #         idx = birpartite_graph[b].nonzero()[1]
+    #         w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
+    #         be += w.reshape(1, -1).tolist()[0]
+
+    #     birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
+
+    #     if modification_ratio:
+    #         graph = birpartite_graph.tocoo()
+    #         values = np_edge_dropout(graph.data, modification_ratio)
+    #         birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        
+    #     return to_tensor(birpartite_graph).to(device)
+    
     def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
-        # if modification_ratio:
-        # print(device)
-        graph = birpartite_graph.tocoo()
-        be = []
-        # birpartite_graph = birpartite_graph.to(device)
-        for b in range(birpartite_graph.shape[0]):
-            idx = birpartite_graph[b].nonzero()[1]
-            w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
-            be += w.reshape(1, -1).tolist()[0]
-        # be = np_edge_dropout(be, modification_ratio)
-        birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
 
         if modification_ratio:
             graph = birpartite_graph.tocoo()
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        # bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        # birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
         
         return to_tensor(birpartite_graph).to(device)
     
