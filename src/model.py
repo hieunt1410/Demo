@@ -189,8 +189,8 @@ class Demo(nn.Module):
             all_feats.append(feats)
             
         all_feats = torch.stack(all_feats, dim=1)
-        # all_feats = torch.sum(all_feats, dim=1).squeeze(1)
-        all_feats = torch.mean(all_feats, dim=1)
+        # all_feats = torch.mean(all_feats, dim=1)
+        all_feats = torch.sum(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
