@@ -197,8 +197,8 @@ class Demo(nn.Module):
         return Afeat, Bfeat
     
     def cal_edge_weight(self, prop_graph, emb):
-        indices = prop_graph.nonzero()
-        values = prop_graph.ones(indices.shape[0])
+        indices = prop_graph._indices().to(self.device)
+        values = prop_graph._values().to(self.device)
         
         start_emb = emb[indices[0]]
         end_emb = emb[indices[1]]
