@@ -175,17 +175,16 @@ class Demo(nn.Module):
     def one_propagate(self, graph, Afeat, Bfeat, test):
         device = self.device
         feats = torch.cat((Afeat, Bfeat), dim=0)
-        ini_feats = nn.functional.normalize(feats, p=2, dim=1)
+        ini_feats = F.normalize(feats, p=2, dim=1)
         all_feats = [feats]
         
         for i in range(self.num_layers):
-            # feats = graph @ feats
+            feats = graph @ feats
             # feats /= (i + 2)
             feats = feats + self.residual_coff * ini_feats            
             feats = F.normalize(feats, p=2, dim=1)
             neighbor_feats = self.cal_edge_weight(graph, feats)
             # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
-            feats = graph @ feats
             all_feats.append(feats)
             
         all_feats = torch.stack(all_feats, dim=1)
