@@ -195,6 +195,7 @@ class Demo(nn.Module):
         return Afeat, Bfeat
     
     def cal_edge_weight(self, prop_graph, emb):
+        prop_graph = prop_graph.coalesce()
         indices = prop_graph._indices().to(self.device)
         values = prop_graph._values().to(self.device)
         
