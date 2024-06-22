@@ -182,9 +182,10 @@ class Demo(nn.Module):
             feats = graph @ feats
             # feats /= (i + 2)
             feats = feats + self.residual_coff * ini_feats            
-            feats = F.normalize(feats, p=2, dim=1)
             neighbor_feats = self.cal_edge_weight(graph, feats)
-            # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            feats = F.normalize(feats, p=2, dim=1)
+            
             all_feats.append(feats)
             
         all_feats = torch.stack(all_feats, dim=1)
