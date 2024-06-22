@@ -182,7 +182,7 @@ class Demo(nn.Module):
             feats = graph @ feats
             # feats /= (i + 2)
             feats = feats + self.residual_coff * ini_feats            
-            neighbor_feats = self.cal_edge_weight(graph, feats)
+            neighbor_feats = self.cal_edge_weight(graph, feats, test)
             feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             feats = F.normalize(feats, p=2, dim=1)
             
@@ -190,16 +190,21 @@ class Demo(nn.Module):
             
         all_feats = torch.stack(all_feats, dim=1)
         # all_feats = torch.mean(all_feats, dim=1)
-        all_feats = torch.sum(all_feats, dim=1)
+        all_feats = torch.sum(all_feats, dim=1).unsqueeze(1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
         return Afeat, Bfeat
     
-    def cal_edge_weight(self, prop_graph, emb):
+    def cal_edge_weight(self, prop_graph, emb, test):
         prop_graph = prop_graph.coalesce()
         indices = prop_graph._indices().to(self.device)
         values = prop_graph._values().to(self.device)
+        
+        if not test:
+            sign = torch.sign(emb)
+            random_noise = F.normalize(torch.rand(emb.shape).to(self.device)) * 0.1
+            emb = emb + sign * random_noise
         
         start_emb = emb[indices[0]]
         end_emb = emb[indices[1]]
