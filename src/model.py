@@ -184,7 +184,7 @@ class Demo(nn.Module):
             feats = feats + self.residual_coff * ini_feats            
             feats = F.normalize(feats, p=2, dim=1)
             neighbor_feats = self.cal_edge_weight(graph, feats)
-            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             feats = graph @ feats
             all_feats.append(feats)
             
