@@ -162,7 +162,8 @@ class Demo(nn.Module):
         
         degree = np.array(propagation_graph.sum(axis=1)).squeeze()
         degree = np.maximum(1., degree)
-        d_inv = np.power(degree, -0.5)
+        d_inv = np.power(degree, -0.5).flatten()
+        d_inv[np.isinf(d_inv)] = 0.
         d_mat = sp.diags(d_inv, format='csr', dtype=np.float32)
         
         # norm_adj = d_mat.dot(propagation_graph).dot(d_mat)
