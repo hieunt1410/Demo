@@ -113,7 +113,7 @@ class Demo(nn.Module):
         # print(device)
         graph = birpartite_graph.tocoo()
         be = []
-        birpartite_graph = birpartite_graph.to(device)
+        # birpartite_graph = birpartite_graph.to(device)
         for b in range(birpartite_graph.shape[0]):
             idx = birpartite_graph[b].nonzero()[1]
             w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
