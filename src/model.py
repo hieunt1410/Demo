@@ -47,19 +47,14 @@ class Demo(nn.Module):
         
         self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
         # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
-        # self.UI_aggregation_graph_ori = self.get_aggregation_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
-        # self.BI_propagation_graph_ori = self.get_propagation_graph(self.bi_graph)
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
         self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
         # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
-        # self.UI_aggregation_graph = self.get_aggregation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        
-        # self.BI_propagation_graph = self.get_propagation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
@@ -118,6 +113,7 @@ class Demo(nn.Module):
         # print(device)
         graph = birpartite_graph.tocoo()
         be = []
+        birpartite_graph = birpartite_graph.to(device)
         for b in range(birpartite_graph.shape[0]):
             idx = birpartite_graph[b].nonzero()[1]
             w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
@@ -170,21 +166,46 @@ class Demo(nn.Module):
     def one_propagate(self, graph, Afeat, Bfeat, test):
         device = self.device
         feats = torch.cat((Afeat, Bfeat), dim=0)
+        ini_feats = nn.functional.normalize(feats, p=2, dim=1)
         all_feats = [feats]
         
         for i in range(self.num_layers):
-            feats = graph @ feats
-            feats /= (i + 2)
+            # feats = graph @ feats
+            # feats /= (i + 2)
+            feats = feats + self.residual_coff * ini_feats            
+            feats = F.normalize(feats, p=2, dim=1)
+            neighbor_feats = self.cal_edge_weight(graph, feats)
+            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             
-            all_feats.append(F.normalize(feats, p=2, dim=1))
+            all_feats.append(feats)
             
         all_feats = torch.stack(all_feats, dim=1)
-        all_feats = torch.sum(all_feats, dim=1).squeeze(1)
+        # all_feats = torch.sum(all_feats, dim=1).squeeze(1)
+        all_feats = torch.mean(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
         return Afeat, Bfeat
     
+    def cal_edge_weight(self, prop_graph, emb):
+        indices = prop_graph.nonzero()
+        values = prop_graph.ones(indices.shape[0])
+        
+        start_emb = emb[indices[0]]
+        end_emb = emb[indices[1]]
+        cross_product = torch.mul(start_emb, end_emb).mean(dim=1)
+        
+        exp_coff = 0.5
+        mat = 1/2 * torch.exp((2 - 2 * cross_product)/exp_coff) * torch.nn.functional.softplus((2 - 2 * cross_product)/exp_coff)
+        mat = mat * values
+        
+        new_indices = indices[0].unsqueeze(1).expand(end_emb.shape)
+        mat = torch.mul(np_edge_dropout(end_emb), mat.unsqueeze(1).expand(end_emb.shape))
+                
+        update_all_emb = torch.zeros(emb.shape).to(self.device)
+        update_all_emb.scatter_add_(0, new_indices, mat)
+        
+        return update_all_emb
     
     def one_aggregate(self, bundle_agg_graph, node_feature, test):
         aggregated_feature = bundle_agg_graph @ node_feature
