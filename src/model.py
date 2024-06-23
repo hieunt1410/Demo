@@ -212,7 +212,7 @@ class Demo(nn.Module):
         
         exp_coff = 0.5
         # mat = 1/2 * torch.exp((2 - 2 * cross_product)/exp_coff) * torch.nn.functional.softplus((2 - 2 * cross_product)/exp_coff)
-        mat = (2 - 2 * cross_product)/self.exp_coff
+        mat = (2 - 2 * cross_product)/exp_coff
         mat = mat * values
         
         new_indices = indices[0].unsqueeze(1).expand(end_emb.shape)
