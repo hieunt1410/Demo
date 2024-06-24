@@ -11,7 +11,7 @@ import pickle
 def gen_bun_attention_graph(dataset, path):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    _, bi_graph, ui_graph, _ = dataset.graphs
+    _, ui_graph, bi_graph, _ = dataset.graphs
     
     graph = bi_graph.tocoo()
     be = []
