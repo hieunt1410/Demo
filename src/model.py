@@ -188,10 +188,10 @@ class Demo(nn.Module):
                 sign = torch.sign(feats)
                 random_noise = F.normalize(torch.rand(feats.shape).to(self.device)) * 0.1
                 feats = feats + sign * random_noise
-            feats = feats + self.residual_coff * ini_feats   
+            # feats = feats + self.residual_coff * ini_feats   
             # neighbor_feats = self.cal_edge_weight(graph, feats, test)
             # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
-            feats /= (i + 2)
+            # feats /= (i + 2)
             feats = F.normalize(feats, p=2, dim=1)
             
             all_feats.append(feats)
