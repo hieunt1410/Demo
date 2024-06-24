@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from utils import *
+import pickle
 
 def cal_bpr_loss(pred):
     negs =  pred[:, 1].unsqueeze(1)
