@@ -16,7 +16,7 @@ def to_tensor(graph):
 def split_batch_item(items, pop):
     g1, g2 = [], []
     # items_sorted = list(np.array(items).argsort(np.array(pop)[items]))
-    item_sorted = items[torch.argsort(pop[items])].tolist()
+    items_sorted = items[torch.argsort(pop[items])].tolist()
     num = len(items_sorted) // 2
     g1.extend(items_sorted[:num])
     g2.extend(items_sorted[num:])
