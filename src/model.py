@@ -122,7 +122,7 @@ class Demo(nn.Module):
         # birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
         with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
             birpartite_graph = pickle.load(f)
-
+        print(birpartite_graph.shape)
         if modification_ratio:
             graph = birpartite_graph.tocoo()
             values = np_edge_dropout(graph.data, modification_ratio)
