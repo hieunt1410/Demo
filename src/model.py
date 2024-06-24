@@ -119,7 +119,7 @@ class Demo(nn.Module):
         #     be += w.reshape(1, -1).tolist()[0]
 
         # birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        with open(self.conf['path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
+        with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
             birpartite_graph = pickle.load(f)
 
         if modification_ratio:
