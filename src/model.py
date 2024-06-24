@@ -111,14 +111,16 @@ class Demo(nn.Module):
     
     def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
-        graph = birpartite_graph.tocoo()
-        be = []
-        for b in range(birpartite_graph.shape[0]):
-            idx = birpartite_graph[b].nonzero()[1]
-            w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
-            be += w.reshape(1, -1).tolist()[0]
+        # graph = birpartite_graph.tocoo()
+        # be = []
+        # for b in range(birpartite_graph.shape[0]):
+        #     idx = birpartite_graph[b].nonzero()[1]
+        #     w = F.softmax(torch.Tensor(self.ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
+        #     be += w.reshape(1, -1).tolist()[0]
 
-        birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        # birpartite_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        with open(conf['path'] + conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
+            birpartite_graph = pickle.load(f)
 
         if modification_ratio:
             graph = birpartite_graph.tocoo()
