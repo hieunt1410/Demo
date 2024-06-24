@@ -51,7 +51,7 @@ def main():
     torch.manual_seed(2024)
     np.random.seed(2024)
     
-    gen_bun_attention_graph(dataset, conf['data_path'] + dataset_name + 'bun_atten_graph.pkl', conf['modification_ratio'])
+    gen_bun_attention_graph(dataset, conf['data_path'] + dataset_name + 'bun_atten_graph.pkl')
     
     model = Demo(conf, dataset.graphs, dataset.bundles_freq).to(device)
     optimizer = optim.Adam(model.parameters(), lr=conf['lr'], weight_decay=conf['lambda2'])
