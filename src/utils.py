@@ -13,67 +13,34 @@ def to_tensor(graph):
     
     return graph
 
+def split_batch_item(items, pop):
+    g1, g2 = [], []
+    items_sorted = list(np.array(items).argsort(np.array(pop)[items]))
+    num = len(items_sorted) // 2
+    g1.extend(items_sorted[:num])
+    g2.extend(items_sorted[num:])
+    
+    return torch.LongTensor(g1), torch.LongTensor(g2)
 
-def mix_graph(raw_graph, num_users, num_items, num_bundles, threshold=10):
-    ub_graph, ui_graph, bi_graph = raw_graph
-    
-    # ii_graph = np.zeros((num_items, num_items), dtype=np.int32)
-    ii_graph = bi_graph.T @ bi_graph
-    
-    uu_graph = ub_graph @ ub_graph.T
-    for i in range(ub_graph.shape[0]):
-        for r in range(uu_graph.indptr[i], uu_graph.indptr[i+1]):
-            uu_graph.data[r] = 1 if uu_graph.data[r] > threshold else 0
-    
-    
-    bb_graph = ub_graph.T @ ub_graph
-    for i in range(ub_graph.shape[1]):
-        for r in range(bb_graph.indptr[i], bb_graph.indptr[i+1]):
-            bb_graph.data[r] = 1 if bb_graph.data[r] > threshold else 0
-            
-    uu_graph = uu_graph + np.eye(num_users)
-    bb_graph = bb_graph + np.eye(num_bundles)
-    
-    H1 = sp.hstack([uu_graph, ui_graph, ub_graph])
-    H2 = sp.hstack([ui_graph.T, ii_graph, bi_graph.T])
-    H3 = sp.hstack([ub_graph.T, bi_graph, bb_graph])
-    H = sp.vstack([H1, H2, H3])
-    print('Finish mix hypergraph')
-    
-    return H
+def InfoNCE(view1, view2, temperature):
+    view1, view2 = torch.nn.functional.normalize(
+        view1, dim=1), torch.nn.functional.normalize(view2, dim=1)
+    pos_score = (view1 * view2).sum(dim=-1)
+    pos_score = torch.exp(pos_score / temperature)
+    ttl_score = torch.matmul(view1, view2.transpose(0, 1))
+    ttl_score = torch.exp(ttl_score / temperature).sum(dim=1)
+    cl_loss = -torch.log(pos_score / ttl_score)
+    return torch.mean(cl_loss)
 
-def normalize_Hyper(H):
-    D_v = sp.diags(1 / (np.sqrt(H.sum(axis=1).A.ravel()) + 1e-8))
-    D_e = sp.diags(1 / (np.sqrt(H.sum(axis=0).A.ravel()) + 1e-8))
-    H_nomalized = D_v @ H @ D_e @ H.T @ D_v
-    return H_nomalized
+def InfoNCE_i(view1, view2, view3,temperature,gama):
+    view1, view2,view3 = torch.nn.functional.normalize(
+        view1, dim=1), torch.nn.functional.normalize(view2, dim=1), torch.nn.functional.normalize(view3, dim=1)
+    pos_score = (view1 * view2).sum(dim=-1)
+    pos_score = torch.exp(pos_score / temperature)
+    ttl_score_1 = torch.matmul(view1, view2.transpose(0, 1))
+    ttl_score_1 = torch.exp(ttl_score_1 / temperature).sum(dim=1)
+    ttl_score_2 = torch.matmul(view1, view3.transpose(0, 1))
+    ttl_score_2 = torch.exp(ttl_score_2 / temperature).sum(dim=1)
 
-def split_hypergraph(H, device, split_num=16):
-    H_list = []
-    length = H.shape[0] // split_num
-    
-    for i in range(split_num):
-        if i == split_num - 1:
-            H_list.append(H[length*i:, :])
-        else:
-            H_list.append(H[length*i:length*(i+1)])
-    
-    H_split = [to_tensor(H_i).to(device) for H_i in H_list]
-    
-    return H_split
-
-def groupby_apply(keys: torch.Tensor, values: torch.Tensor, bins: int = 95, reduction: str = "mean", return_histogram: bool = False):
-    if reduction == "mean":
-        reduce = torch.mean
-    elif reduction == "sum":
-        reduce = torch.sum
-    else:
-        raise ValueError(f"Unknown reduction '{reduction}'")
-    uniques, counts = keys.unique(return_counts=True)
-    groups = torch.stack([reduce(item) for item in torch.split_with_sizes(values, tuple(counts))])
-    reduced = torch.zeros(bins, dtype=values.dtype, device=values.device).scatter(dim=0, index=uniques, src=groups)
-    if return_histogram:
-        hist = torch.zeros(bins, dtype=torch.long, device=values.device).scatter(dim=0, index=uniques, src=counts)
-        return reduced, hist
-    else:
-        return reduced
+    cl_loss = -torch.log(pos_score / (gama*ttl_score_2+ttl_score_1+pos_score))
+    return torch.mean(cl_loss)
