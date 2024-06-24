@@ -182,12 +182,12 @@ class Demo(nn.Module):
             feats = graph @ feats
             # feats /= (i + 2)
             # feats = feats + self.residual_coff * ini_feats    
-            if not test:
-                sign = torch.sign(feats)
-                random_noise = F.normalize(torch.rand(feats.shape).to(self.device)) * 0.1
-                feats = feats + sign * random_noise
+            # if not test:
+            #     sign = torch.sign(feats)
+            #     random_noise = F.normalize(torch.rand(feats.shape).to(self.device)) * 0.1
+            #     feats = feats + sign * random_noise
             neighbor_feats = self.cal_edge_weight(graph, feats, test)
-            # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             feats = F.normalize(feats, p=2, dim=1)
             
             all_feats.append(feats)
@@ -284,9 +284,9 @@ class Demo(nn.Module):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         
-        user_c_loss = InfoNCE(hist_users_feat[batch_users], aff_users_feat[batch_users], 0.2)
-        bundle_c_pop = InfoNCE_i(hist_bundles_feat[batch_pop], aff_bundles_feat[batch_pop], aff_bundles_feat[batch_unpop], 0.2, 0.2)
-        bundle_c_unpop = InfoNCE_i(hist_bundles_feat[batch_unpop], aff_bundles_feat[batch_unpop], aff_bundles_feat[batch_pop], 0.2, 0.2)
+        user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2)
+        bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
+        bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
         
         bundle_c_loss = (bundle_c_pop + bundle_c_unpop) * 0.5
         c_loss = user_c_loss + bundle_c_loss
