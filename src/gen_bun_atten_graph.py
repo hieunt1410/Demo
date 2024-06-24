@@ -1,9 +1,11 @@
 import pandas as pd
 import os
 import sys
+import numpy as np
 import scipy.sparse as sp
 import torch
-import numpy as np
+import torch.nn as nn
+import torch.nn.functional as F
 import pickle
 
 def gen_bun_attention_graph(dataset, path):
