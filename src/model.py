@@ -309,7 +309,6 @@ class Demo(nn.Module):
         hist_users_feat = hist_users_feat[:, 0, :]
         user_align = self.cal_a_loss(aff_users_feat, hist_users_feat)
         user_uniform = (self.cal_u_loss(aff_users_feat) + self.cal_u_loss(hist_users_feat)) / 2
-        user_c_loss = self.cal_c_loss(aff_users_feat, hist_users_feat)
         
         u_loss = (bundle_uniform + user_uniform)
         a_loss = (bundle_align + user_align)
