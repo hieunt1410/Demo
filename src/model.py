@@ -284,7 +284,7 @@ class Demo(nn.Module):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         
-        user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2)
+        user_c_loss = InfoNCE(hist_users_feat[batch_users], aff_users_feat[batch_users], 0.2)
         bundle_c_pop = InfoNCE_i(hist_bundles_feat[batch_pop], aff_bundles_feat[batch_pop], aff_bundles_feat[batch_unpop], 0.2, 0.2)
         bundle_c_unpop = InfoNCE_i(hist_bundles_feat[batch_unpop], aff_bundles_feat[batch_unpop], aff_bundles_feat[batch_pop], 0.2, 0.2)
         
