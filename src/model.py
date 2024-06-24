@@ -47,16 +47,16 @@ class Demo(nn.Module):
         self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
         
         
-        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
-        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
@@ -160,7 +160,7 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             propagation_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        degree = np.array(propagation_graph.sum(axis=1)).squeeze()
+        degree = np.array(propagation_graph.sum(axis=0)).squeeze()
         degree = np.maximum(1., degree)
         d_inv = np.power(degree, -0.5).flatten()
         d_inv[np.isinf(d_inv)] = 0.
