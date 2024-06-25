@@ -183,7 +183,7 @@ class Demo(nn.Module):
         all_feats = [feats]
         
         for i in range(self.num_layers):
-            # feats = graph @ feats
+            feats = graph @ feats
 
             feats = self.dropout(feats)
             feats = feats + self.residual_coff * ini_feats
