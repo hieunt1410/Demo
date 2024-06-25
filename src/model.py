@@ -284,7 +284,7 @@ class Demo(nn.Module):
         
         c_loss = user_c_loss + bundle_c_loss
         
-        return c_loss
+        return bundle_c_loss
         
 
     def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
