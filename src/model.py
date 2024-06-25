@@ -42,7 +42,7 @@ class Demo(nn.Module):
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
         self.residual_coff = conf['residual_coff']
-        self.dropout = nn.Dropout(p=0.4 , inplace=True)
+        self.dropout = nn.Dropout(p=0.2 , inplace=True)
         
         self.init_embed()
         
@@ -188,6 +188,7 @@ class Demo(nn.Module):
             # feats = feats + self.residual_coff * ini_feats
             # neighbor_feats = self.cal_edge_weight(graph, feats, test)
             # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            feats = self.dropout(feats)
             feats /= (i + 2)
             feats = F.normalize(feats, p=2, dim=1)
             
@@ -264,16 +265,7 @@ class Demo(nn.Module):
         return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
     
     def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
-        # pos = F.normalize(pos, p=2, dim=1)
-        # aug = F.normalize(aug, p=2, dim=1)
-        # pos_score = torch.sum(pos * aug, dim=1)
-        
-        # ttl_score = pos @ aug.T
-        # ttl_score = torch.sum(torch.exp(ttl_score ), axis=1)
-        
-        # c_loss = -torch.mean(torch.log(torch.exp(pos_score / 1) / ttl_score))
-        
-        # return c_loss
+
         pos, neg = bundles[:, 0], bundles[:, 1]
         batch_pop, batch_unpop = split_batch_item(pos, self.bundle_freq)
         
