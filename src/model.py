@@ -42,7 +42,7 @@ class Demo(nn.Module):
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
         self.residual_coff = conf['residual_coff']
-        self.dropout = nn.Dropout(0,4 , inplace=True)
+        self.dropout = nn.Dropout(p=0.4 , inplace=True)
         
         self.init_embed()
         
