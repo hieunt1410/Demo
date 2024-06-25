@@ -184,11 +184,12 @@ class Demo(nn.Module):
         
         for i in range(self.num_layers):
             feats = graph @ feats
-            # feats /= (i + 2)
-            # feats = feats + self.residual_coff * ini_feats
-            # neighbor_feats = self.cal_edge_weight(graph, feats, test)
-            # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+
             feats = self.dropout(feats)
+            feats = feats + self.residual_coff * ini_feats
+            neighbor_feats = self.cal_edge_weight(graph, feats, test)
+            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            
             feats /= (i + 2)
             feats = F.normalize(feats, p=2, dim=1)
             
