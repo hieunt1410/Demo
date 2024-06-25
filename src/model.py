@@ -42,6 +42,7 @@ class Demo(nn.Module):
         self.bundle_freq = torch.FloatTensor(bundles_freq).to(self.device)
         
         self.residual_coff = conf['residual_coff']
+        self.dropout = nn.Dropout(0,4 , inplace=True)
         
         self.init_embed()
         
@@ -64,8 +65,8 @@ class Demo(nn.Module):
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
-        self.init_md_dropouts()
-        self.init_noise_eps()
+        # self.init_md_dropouts()
+        # self.init_noise_eps()
         
         
         
@@ -224,7 +225,7 @@ class Demo(nn.Module):
         mat = mat * values
         
         new_indices = indices[0].unsqueeze(1).expand(end_emb.shape)
-        mat = torch.mul(self.mess_dropout_dict['UI'](end_emb), mat.unsqueeze(1).expand(end_emb.shape))
+        mat = torch.mul(self.dropout(end_emb), mat.unsqueeze(1).expand(end_emb.shape))
                 
         update_all_emb = torch.zeros(emb.shape).to(self.device)
         update_all_emb.scatter_add_(0, new_indices, mat)
