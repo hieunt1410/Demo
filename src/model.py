@@ -277,15 +277,27 @@ class Demo(nn.Module):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         
-        # users_feat_, bundles_feat_ = self.propagate()
-        # aff_users_feat_, hist_users_feat_ = users_feat_
-        # aff_bundles_feat_, hist_bundles_feat_ = bundles_feat_
+        users_feat_, bundles_feat_ = self.propagate()
+        aff_users_feat_, hist_users_feat_ = users_feat_
+        aff_bundles_feat_, hist_bundles_feat_ = bundles_feat_
         
-        user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2) * 0.5
-        bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
-        bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
+        # user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2) * 0.5
+        # bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
+        # bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
+        user_aff_c_loss = InfoNCE(aff_users_feat[batch_users], aff_users_feat_[batch_users], 0.2) * 0.5
+        user_hist_c_loss = InfoNCE(hist_users_feat[batch_users], hist_users_feat_[batch_users], 0.2) * 0.5
+        user_c_loss = (user_aff_c_loss + user_hist_c_loss) * 0.5
         
-        bundle_c_loss = (bundle_c_pop + bundle_c_unpop) * 0.5
+        bundle_aff_c_pop = InfoNCE_i(aff_users_feat[batch_pop], aff_bundles_feat_[batch_pop], aff_bundles_feat_[batch_unpop], 0.2, 0.2)
+        bundle_aff_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], aff_bundles_feat_[batch_unpop], aff_bundles_feat_[batch_pop], 0.2, 0.2)
+        
+        bundle_hist_c_pop = InfoNCE_i(hist_users_feat[batch_pop], hist_bundles_feat_[batch_pop], hist_bundles_feat_[batch_unpop], 0.2, 0.2)
+        bundle_hist_c_unpop = InfoNCE_i(hist_users_feat[batch_unpop], hist_bundles_feat_[batch_unpop], hist_bundles_feat_[batch_pop], 0.2, 0.2)
+        
+        bundle_aff_c_loss = (bundle_aff_c_pop + bundle_aff_c_unpop) * 0.5
+        bundle_hist_c_loss = (bundle_hist_c_pop + bundle_hist_c_unpop) * 0.5
+        bundle_c_loss = (bundle_aff_c_loss + bundle_hist_c_loss) * 0.5
+        
         c_loss = user_c_loss + bundle_c_loss
         
         return c_loss
@@ -332,7 +344,7 @@ class Demo(nn.Module):
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
         bpr_loss, a_loss, u_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
-        c_loss = self.cal_c_loss(users, bundles, users_embedding, bundles_embedding)
+        c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         # c_loss = (a_loss + u_loss) / 2
         
         return bpr_loss, c_loss
