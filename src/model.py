@@ -183,14 +183,14 @@ class Demo(nn.Module):
         all_feats = [feats]
         
         for i in range(self.num_layers):
-            feats = graph @ feats
+            # feats = graph @ feats
 
             feats = self.dropout(feats)
             feats = feats + self.residual_coff * ini_feats
             neighbor_feats = self.cal_edge_weight(graph, feats, test)
             feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             
-            feats /= (i + 2)
+            # feats /= (i + 2)
             feats = F.normalize(feats, p=2, dim=1)
             
             all_feats.append(feats)
@@ -217,8 +217,8 @@ class Demo(nn.Module):
         cross_product = torch.mul(start_emb, end_emb).mean(dim=1)
         
         exp_coff = 0.5
-        # mat = 1/2 * torch.exp((2 - 2 * cross_product)/exp_coff) * torch.nn.functional.softplus((2 - 2 * cross_product)/exp_coff)
-        mat = (2 - 2 * cross_product)/exp_coff
+        mat = 1/2 * torch.exp((2 - 2 * cross_product)/exp_coff) * torch.nn.functional.softplus((2 - 2 * cross_product)/exp_coff)
+        # mat = (2 - 2 * cross_product)/exp_coff
         mat = mat * values
         
         new_indices = indices[0].unsqueeze(1).expand(end_emb.shape)
