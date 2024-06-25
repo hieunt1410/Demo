@@ -277,6 +277,10 @@ class Demo(nn.Module):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         
+        users_feat_, bundles_feat_ = self.propagate()
+        aff_users_feat_, hist_users_feat_ = users_feat_
+        aff_bundles_feat_, hist_bundles_feat_ = bundles_feat_
+        
         user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2) * 0.5
         bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
         bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
@@ -287,7 +291,7 @@ class Demo(nn.Module):
         return c_loss
         
 
-    def cal_loss(self, users, bundles, users_feat, bundles_feat, bundles_gamma):
+    def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma.unsqueeze(2))
@@ -308,9 +312,8 @@ class Demo(nn.Module):
         
         u_loss = (bundle_uniform + user_uniform)
         a_loss = (bundle_align + user_align)
-        c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         
-        return bpr_loss, a_loss, u_loss, c_loss
+        return bpr_loss, a_loss, u_loss
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
@@ -328,10 +331,11 @@ class Demo(nn.Module):
         bundles_gamma = torch.tanh(self.bundle_freq / psi)
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
-        bpr_loss, a_loss, u_loss, c_loss = self.cal_loss(users, bundles, users_embedding, bundles_embedding, bundles_gamma)
-        reg_loss = a_loss + u_loss + c_loss
+        bpr_loss, a_loss, u_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        c_loss = self.cal_c_loss(users, bundles, users_embedding, bundles_embedding)
+        # c_loss = (a_loss + u_loss) / 2
         
-        return bpr_loss, reg_loss
+        return bpr_loss, c_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
