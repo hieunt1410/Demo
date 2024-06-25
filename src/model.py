@@ -336,7 +336,7 @@ class Demo(nn.Module):
                                                                 
         bpr_loss, a_loss, u_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
-        c_loss = (a_loss + u_loss) / 2
+        # c_loss = (a_loss + u_loss) / 2
         
         return bpr_loss, c_loss
         
