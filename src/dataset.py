@@ -66,7 +66,7 @@ class Datasets():
         
         self.num_users, self.num_bundles, self.num_items = self.get_data_size()
         bi_graph = self.get_bi()
-        ui_pairs, ui_graph, new_ui_graph = self.get_ui()
+        ui_pairs, ui_graph = self.get_ui()
         
         ub_pairs_train, ub_graph_train = self.get_ub('train')
         ub_pairs_val, ub_graph_val = self.get_ub('tune')
@@ -76,7 +76,7 @@ class Datasets():
         self.bundle_val_data = TestDataset(ub_pairs_val, ub_graph_val, ub_graph_train, self.num_users, self.num_bundles)
         self.bundle_test_data = TestDataset(ub_pairs_test, ub_graph_test, ub_graph_train, self.num_users, self.num_bundles)
         
-        self.graphs = [ub_graph_train, ui_graph, bi_graph, new_ui_graph]
+        self.graphs = [ub_graph_train, ui_graph, bi_graph]
         
         self.train_loader = DataLoader(self.bundle_train_data, batch_size=bsz_train, shuffle=True)
         self.val_loader = DataLoader(self.bundle_val_data, batch_size=bsz_test, shuffle=False)

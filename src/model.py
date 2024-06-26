@@ -46,7 +46,7 @@ class Demo(nn.Module):
         
         self.init_embed()
         
-        self.ub_graph, self.ui_graph, self.bi_graph, self.new_ui_graph = raw_graph
+        self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
         
         
         # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
