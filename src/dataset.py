@@ -107,27 +107,7 @@ class Datasets():
         values = np.ones(len(ui_pairs))
         ui_graph = sp.coo_matrix((values, (indices[:, 0], indices[:, 1])), shape=(self.num_users, self.num_items)).tocsr()
         
-        plus = np.load('../data/warm/Youshu/lightgclyoushu_result20.npy').tolist()
-        
-        index_new_x = indices[:, 0].tolist()
-        index_new_y = indices[:, 1].tolist()
-         
-        for i in range(self.num_users):
-            temx = []
-            temy = []
-            for j in plus[i]:
-                temx.extend([i])
-                temy.extend([j])
-            index_new_x.extend(temx)
-            index_new_y.extend(temy)
-        index_new_x = np.array(index_new_x)
-        index_new_y = np.array(index_new_y)
-        values_new = np.ones(len(index_new_x), dtype=np.float32)
-
-        new_ui_graph = sp.coo_matrix( 
-            (values_new, (index_new_x, index_new_y)), shape=(self.num_users, self.num_items)).tocsr()
-        
-        return ui_pairs, ui_graph, new_ui_graph
+        return ui_pairs, ui_graph
     
     def get_ub(self, mode):
         with open(os.path.join(self.path, self.name, f'user_bundle_{mode}.txt'), 'r') as f:
