@@ -97,7 +97,7 @@ Steam:
 
   residual_coff: 0.4
 
-  lr: 1.0e-3
+  lr: 5.0e-3
   lambda2: 1.0e-4
   lambda1: 0.1
 
