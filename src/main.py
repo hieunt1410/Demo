@@ -69,21 +69,21 @@ def main():
             model.train(True)
             optimizer.zero_grad()
             batch = [x.to(device) for x in batch]
-            
-            bpr_loss, c_loss = model(batch, ED_dropout=True, psi=psi)
-            loss = bpr_loss + c_loss * conf['lambda1']
+
+            bpr_loss, c_loss = model(batch, ED_drop=True, psi=psi)
+            loss = bpr_loss + conf["lambda1"] * c_loss
             loss.backward()
             optimizer.step()
-            
+
             loss_scalar = loss.detach()
             bpr_loss_scalar = bpr_loss.detach()
             c_loss_scalar = c_loss.detach()
-            
-            loss_avg = moving_avg(loss_avg, cur_instance_num, loss_scalar, batch[0].shape[0])
-            bpr_loss_avg = moving_avg(bpr_loss_avg, cur_instance_num, bpr_loss_scalar, batch[0].shape[0])
-            c_loss_avg = moving_avg(c_loss_avg, cur_instance_num, c_loss_scalar, batch[0].shape[0])
-            cur_instance_num += batch[0].shape[0]
-            pbar.set_description(f'Epoch {epoch} | BPR Loss: {bpr_loss_avg:.4f} | Content Loss: {c_loss_avg:.4f} | Total Loss: {loss_avg:.4f}')
+
+            loss_avg = moving_avg(loss_avg, cur_instance_num, loss_scalar, batch[0].size(0))
+            bpr_loss_avg = moving_avg(bpr_loss_avg, cur_instance_num, bpr_loss_scalar, batch[0].size(0))
+            c_loss_avg = moving_avg(c_loss_avg, cur_instance_num, c_loss_scalar, batch[0].size(0))
+            cur_instance_num += batch[0].size(0)
+            pbar.set_description(f'epoch: {epoch:3d} | loss: {loss_avg:8.4f} | bpr_loss: {bpr_loss_avg:8.4f} | c_loss: {c_loss_avg:8.4f}')
             
         if epoch % conf['test_interval'] == 0:
             metrics = {}
