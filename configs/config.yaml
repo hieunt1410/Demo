@@ -97,13 +97,13 @@ Steam:
 
   residual_coff: 0.4
 
-  lr: 5.0e-3
+  lr: 3.0e-3
   lambda2: 1.0e-4
   lambda1: 0.1
 
   max_temp: 10000
 
-  epochs: 100
+  epochs: 150
   test_interval: 5
 
   aug_type: 'MD'
