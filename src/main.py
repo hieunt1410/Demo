@@ -70,7 +70,7 @@ def main():
             optimizer.zero_grad()
             batch = [x.to(device) for x in batch]
 
-            bpr_loss, c_loss = model(batch, ED_drop=True, psi=psi)
+            bpr_loss, c_loss = model(batch, ED_dropout=True, psi=psi)
             loss = bpr_loss + conf["lambda1"] * c_loss
             loss.backward()
             optimizer.step()
