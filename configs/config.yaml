@@ -84,7 +84,7 @@ Steam:
   data_path: '../data/warm'
   batch_size_train: 2048
   batch_size_test: 2048
-  topk: [1, 3, 5]
+  topk: [1, 3, 5, 10]
   topk_valid: 20
 
 
