@@ -315,11 +315,11 @@ class Demo(nn.Module):
         distill_loss = 0.1 * F.binary_cross_entropy_with_logits(aff_rank_dist, torch.sigmoid(hist_rank_dist))
         
         aff_ii_logits = torch.sum(bundles_feat[0][bundles[:, 0]] * bundles_feat[0][bundles[:, 0]], 1)
-        aff_ij_logits = torch.mean(bundles_feat[0][bundles[:, 0]] * bundles_feat[0][bundles[:, 1]].T, 1)
+        aff_ij_logits = torch.mean(bundles_feat[0][bundles[:, 0]] @ bundles_feat[0][bundles[:, 1]].T, 1)
         aff_iden_dist = aff_ii_logits - aff_ij_logits
         
         hist_ii_logits = torch.sum(bundles_feat[1][bundles[:, 0]] * bundles_feat[1][bundles[:, 0]], 1)
-        hist_ij_logits = torch.mean(bundles_feat[1][bundles[:, 0]] * bundles_feat[1][bundles[:, 1]].T, 1)
+        hist_ij_logits = torch.mean(bundles_feat[1][bundles[:, 0]] @ bundles_feat[1][bundles[:, 1]].T, 1)
         hist_iden_dist = hist_ii_logits - hist_ij_logits
         
         distill_loss += F.binary_cross_entropy_with_logits(aff_iden_dist, torch.sigmoid(hist_iden_dist))
