@@ -134,31 +134,31 @@ class Demo(nn.Module):
         
         return to_tensor(laplace_transform(propagation_graph)).to(device)
     
-    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
-        device = self.device
-
-        with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
-            birpartite_graph = pickle.load(f)
-            
-        if modification_ratio:
-            graph = birpartite_graph.tocoo()
-            values = np_edge_dropout(graph.data, modification_ratio)
-            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        
-        return to_tensor(birpartite_graph).to(device)
-    
     # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
     #     device = self.device
 
+    #     with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
+    #         birpartite_graph = pickle.load(f)
+            
     #     if modification_ratio:
     #         graph = birpartite_graph.tocoo()
     #         values = np_edge_dropout(graph.data, modification_ratio)
     #         birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-    #     bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-    #     birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
-        
     #     return to_tensor(birpartite_graph).to(device)
+    
+    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
+        device = self.device
+
+        if modification_ratio:
+            graph = birpartite_graph.tocoo()
+            values = np_edge_dropout(graph.data, modification_ratio)
+            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        
+        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        
+        return to_tensor(birpartite_graph).to(device)
     
     def get_bundle_agg_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
@@ -374,7 +374,7 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, c_loss + au_loss
+        return bpr_loss, c_loss + u_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
