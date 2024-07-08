@@ -28,6 +28,29 @@ def np_edge_dropout(values, dropout):
     
     return values
 
+class DenseBatchFCTanh(nn.Module):
+    def __init__(self, input_dim, output_dim, reg, do_norm):
+        super(DenseBatchFCTanh, self).__init__()
+        self.linear = nn.Linear(input_dim, output_dim)
+        self.do_norm = do_norm
+        self.batch_norm = nn.BatchNorm1d(output_dim) if do_norm else None
+        self.reg = reg
+
+    def forward(self, x):
+        x = self.linear(x)
+        if self.do_norm:
+            x = self.batch_norm(x)
+        return torch.tanh(x)
+
+class DenseFC(nn.Module):
+    def __init__(self, input_dim, output_dim, reg):
+        super(DenseFC, self).__init__()
+        self.linear = nn.Linear(input_dim, output_dim)
+        self.reg = reg
+
+    def forward(self, x):
+        return self.linear(x)
+
 class Demo(nn.Module):
     def __init__(self, conf, raw_graph, bundles_freq):
         super(Demo, self).__init__()
@@ -256,27 +279,53 @@ class Demo(nn.Module):
         x = F.normalize(x, dim=-1)
         return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
     
-    def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
+    # def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
 
-        pos, neg = bundles[:, 0], bundles[:, 1]
-        batch_pop, batch_unpop = split_batch_item(pos, self.bundle_freq)
+    #     pos, neg = bundles[:, 0], bundles[:, 1]
+    #     batch_pop, batch_unpop = split_batch_item(pos, self.bundle_freq)
         
-        batch_users = torch.unique(users).type(torch.LongTensor).to(self.device)
-        batch_pop = torch.unique(batch_pop).type(torch.LongTensor).to(self.device)
-        batch_unpop = torch.unique(batch_unpop).type(torch.LongTensor).to(self.device)
+    #     batch_users = torch.unique(users).type(torch.LongTensor).to(self.device)
+    #     batch_pop = torch.unique(batch_pop).type(torch.LongTensor).to(self.device)
+    #     batch_unpop = torch.unique(batch_unpop).type(torch.LongTensor).to(self.device)
         
-        aff_users_feat, hist_users_feat = users_feat
-        aff_bundles_feat, hist_bundles_feat = bundles_feat
+    #     aff_users_feat, hist_users_feat = users_feat
+    #     aff_bundles_feat, hist_bundles_feat = bundles_feat
         
-        user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2) * 0.2
+    #     user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2) * 0.2
         
-        bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
-        bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
-        bundle_c_loss = (bundle_c_pop + bundle_c_unpop) * 0.2
+    #     bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
+    #     bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
+    #     bundle_c_loss = (bundle_c_pop + bundle_c_unpop) * 0.2
         
-        c_loss = user_c_loss + bundle_c_loss
+    #     c_loss = user_c_loss + bundle_c_loss
         
-        return 0.5 * c_loss
+    #     return 0.5 * c_loss
+    def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
+        aff_pos_logits = torch.sum(users_feat[0][users] * bundles_feat[0][bundles[:, 0]], 1)
+        aff_neg_logits = torch.sum(users_feat[0][users] * bundles_feat[0][bundles[:, 1]], 1)
+        aff_rank_dist = aff_pos_logits - aff_neg_logits
+        supervised_loss = F.binary_cross_entropy_with_logits(aff_rank_dist, torch.ones_like(aff_rank_dist))
+        
+        hist_pos_logits = torch.sum(users_feat[1][users] * bundles_feat[1][bundles[:, 0]], 1)
+        hist_neg_logits = torch.sum(users_feat[1][users] * bundles_feat[1][bundles[:, 1]], 1)
+        hist_rank_dist = hist_pos_logits - hist_neg_logits
+        
+        distill_loss = 0.1 * F.binary_cross_entropy_with_logits(aff_rank_dist, torch.sigmoid(hist_rank_dist))
+        
+        aff_ii_logits = torch.sum(bundles_feat[0][bundles[:, 0]] * bundles_feat[0][bundles[:, 0]], 1)
+        aff_ij_logits = torch.mean(bundles_feat[0][bundles[:, 0]] * bundles_feat[0][bundles[:, 1]].T, 1)
+        aff_iden_dist = aff_ii_logits - aff_ij_logits
+        
+        hist_ii_logits = torch.sum(bundles_feat[1][bundles[:, 0]] * bundles_feat[1][bundles[:, 0]], 1)
+        hist_ij_logits = torch.mean(bundles_feat[1][bundles[:, 0]] * bundles_feat[1][bundles[:, 1]].T, 1)
+        hist_iden_dist = hist_ii_logits - hist_ij_logits
+        
+        distill_loss += F.binary_cross_entropy_with_logits(aff_iden_dist, torch.sigmoid(hist_iden_dist))
+        distill_loss += 0.1 * (torch.mean(torch.abs(hist_pos_logits - aff_pos_logits)) + torch.mean(torch.abs(hist_neg_logits - aff_neg_logits)))
+        
+        total_loss = supervised_loss + distill_loss
+        
+        return total_loss
         
 
     def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
@@ -321,9 +370,9 @@ class Demo(nn.Module):
                                                                 
         bpr_loss, a_loss, u_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
-        au_loss = (a_loss + u_loss) / 2
+        au_loss = a_loss + u_loss
         
-        return bpr_loss, au_loss
+        return bpr_loss, c_loss + au_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
