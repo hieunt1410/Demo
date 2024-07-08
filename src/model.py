@@ -134,31 +134,31 @@ class Demo(nn.Module):
         
         return to_tensor(laplace_transform(propagation_graph)).to(device)
     
-    # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
-    #     device = self.device
-
-    #     with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
-    #         birpartite_graph = pickle.load(f)
-            
-    #     if modification_ratio:
-    #         graph = birpartite_graph.tocoo()
-    #         values = np_edge_dropout(graph.data, modification_ratio)
-    #         birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        
-    #     return to_tensor(birpartite_graph).to(device)
-    
     def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
 
+        with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
+            birpartite_graph = pickle.load(f)
+            
         if modification_ratio:
             graph = birpartite_graph.tocoo()
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
-        
         return to_tensor(birpartite_graph).to(device)
+    
+    # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
+    #     device = self.device
+
+    #     if modification_ratio:
+    #         graph = birpartite_graph.tocoo()
+    #         values = np_edge_dropout(graph.data, modification_ratio)
+    #         birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        
+    #     bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+    #     birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        
+    #     return to_tensor(birpartite_graph).to(device)
     
     def get_bundle_agg_graph(self, birpartite_graph, modification_ratio=0):
         device = self.device
@@ -202,7 +202,7 @@ class Demo(nn.Module):
             feats = graph @ feats
 
             feats = self.dropout(feats)
-            feats = feats + self.residual_coff * ini_feats
+            # feats = feats + self.residual_coff * ini_feats
             neighbor_feats = self.cal_edge_weight(graph, feats, test)
             feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             
