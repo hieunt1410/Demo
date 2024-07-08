@@ -17,7 +17,8 @@ def gen_bun_attention_graph(dataset, path):
     be = []
     for b in range(bi_graph.shape[0]):
         idx = bi_graph[b].nonzero()[1]
-        w = torch.softmax(torch.Tensor(ui_graph.T[idx].sum(axis=1).tolist()), 0).to(device)
+        pop = (ui_graph.T[idx].sum(axis=1) + 1e-6).tolist()
+        w = torch.softmax(torch.Tensor(pop), 0).to(device)
         be += w.reshape(1, -1).tolist()[0]
 
     bi_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
