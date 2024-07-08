@@ -301,13 +301,13 @@ class Demo(nn.Module):
         
     #     return 0.5 * c_loss
     def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
-        aff_pos_logits = torch.sum(users_feat[0][users] * bundles_feat[0][bundles[:, 0]], 1)
-        aff_neg_logits = torch.sum(users_feat[0][users] * bundles_feat[0][bundles[:, 1]], 1)
+        aff_pos_logits = torch.sum(users_feat[users] * bundles_feat[0][bundles[:, 0]], 1)
+        aff_neg_logits = torch.sum(users_feat[users] * bundles_feat[0][bundles[:, 1]], 1)
         aff_rank_dist = aff_pos_logits - aff_neg_logits
         supervised_loss = F.binary_cross_entropy_with_logits(aff_rank_dist, torch.ones_like(aff_rank_dist))
         
-        hist_pos_logits = torch.sum(users_feat[1][users] * bundles_feat[1][bundles[:, 0]], 1)
-        hist_neg_logits = torch.sum(users_feat[1][users] * bundles_feat[1][bundles[:, 1]], 1)
+        hist_pos_logits = torch.sum(users_feat[users] * bundles_feat[1][bundles[:, 0]], 1)
+        hist_neg_logits = torch.sum(users_feat[users] * bundles_feat[1][bundles[:, 1]], 1)
         hist_rank_dist = hist_pos_logits - hist_neg_logits
         
         distill_loss = 0.1 * F.binary_cross_entropy_with_logits(aff_rank_dist, torch.sigmoid(hist_rank_dist))
