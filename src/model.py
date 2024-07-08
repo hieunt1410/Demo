@@ -301,7 +301,7 @@ class Demo(nn.Module):
         
     #     return 0.5 * c_loss
     def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
-        batch_users = torch.unique(users).type(torch.LongTensor).to(self.device)
+        batch_users = users.type(torch.LongTensor).to(self.device)
         
         aff_pos_logits = torch.sum(users_feat[0][batch_users] * bundles_feat[0][bundles[:, 0]], 1)
         aff_neg_logits = torch.sum(users_feat[0][batch_users] * bundles_feat[0][bundles[:, 1]], 1)
