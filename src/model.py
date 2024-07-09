@@ -88,30 +88,6 @@ class Demo(nn.Module):
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
-        # self.init_md_dropouts()
-        # self.init_noise_eps()
-        
-        
-        
-    def init_md_dropouts(self):
-        self.UB_dropout = nn.Dropout(self.conf['hist_ed_ratio'], inplace=True)
-        self.UI_dropout = nn.Dropout(self.conf['aff_ed_ratio'], inplace=True)
-        self.BI_dropout = nn.Dropout(self.conf['agg_ed_ratio'], inplace=True)
-        self.mess_dropout_dict = {
-            'UB': self.UB_dropout,
-            'UI': self.UI_dropout,
-            'BI': self.BI_dropout
-        }
-        
-    def init_noise_eps(self):
-        self.UB_eps = self.conf["hist_ed_ratio"]
-        self.UI_eps = self.conf["aff_ed_ratio"]
-        self.BI_eps = self.conf["agg_ed_ratio"]
-        self.eps_dict = {
-            "UB": self.UB_eps,
-            "UI": self.UI_eps,
-            "BI": self.BI_eps
-        }
     
     def init_embed(self):
         self.users_feat = nn.Parameter(torch.FloatTensor(self.num_users, self.embedding_size))
@@ -262,7 +238,7 @@ class Demo(nn.Module):
             
     def random_graph_aug(self, graph):
         graph = graph.tocoo()
-        values = np_edge_dropout(graph.data, self.conf['ed_ratio'])
+        values = np_edge_dropout(graph.data, self.conf['hist_ed_ratio'])
         graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
         return to_tensor(graph).to(self.device)
