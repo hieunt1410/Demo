@@ -46,3 +46,4 @@ def InfoNCE_i(view1, view2, view3,temperature,gama):
     cl_loss = -torch.log(pos_score / (gama*ttl_score_2+ttl_score_1))
     
     return torch.mean(cl_loss)
+

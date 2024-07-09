@@ -245,10 +245,28 @@ class Demo(nn.Module):
         
         return update_all_emb
     
+    
     def one_aggregate(self, bundle_agg_graph, node_feature, test):
         aggregated_feature = bundle_agg_graph @ node_feature
         
         return aggregated_feature
+    
+    
+    def graph_reconstruction(self):
+        drop_adj = []
+        for k in range(self.num_layers):
+            drop_adj.append(self.random_graph_aug(self.UB_propagation_graph))
+        
+        return drop_adj
+    
+            
+    def random_graph_aug(self, graph):
+        graph = graph.tocoo()
+        values = np_edge_dropout(graph.data, self.conf['ed_ratio'])
+        graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        
+        return to_tensor(graph).to(self.device)
+    
     
     def propagate(self, test=False):       
         if test:
@@ -331,9 +349,20 @@ class Demo(nn.Module):
     #     total_loss = supervised_loss + distill_loss
         
     #     return total_loss
+    def cal_cl_loss(self, idx, aug_graph_1, aug_graph_2):
+        u_idx = torch.unique(torch.Tensor(idx[0]).type(torch.long)).cuda()
+        b_idx = torch.unique(torch.Tensor(idx[1]).type(torch.long)).cuda()
         
+        u_view_1, b_view_1 = self.one_propagate(aug_graph_1, self.users_feat, self.bundles_feat, True)
+        u_view_2, b_view_2 = self.one_propagate(aug_graph_2, self.users_feat, self.bundles_feat, True)
+        
+        view_1 = torch.cat((u_view_1[u_idx], b_view_1[b_idx]), 0)
+        view_2 = torch.cat((u_view_2[u_idx], b_view_2[b_idx]), 0)
+        
+        return InfoNCE(view_1, view_2, 0.2)
+    
 
-    def cal_loss(self, users_feat, bundles_feat, bundles_gamma):
+    def cal_loss(self, users, bundles, users_feat, bundles_feat, bundles_gamma):
         aff_users_feat, hist_users_feat = users_feat
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma.unsqueeze(2))
@@ -355,7 +384,11 @@ class Demo(nn.Module):
         u_loss = (bundle_uniform + user_uniform)
         a_loss = (bundle_align + user_align)
         
-        return bpr_loss, a_loss, u_loss
+        aug_graph_1 = self.graph_reconstruction()
+        aug_graph_2 = self.graph_reconstruction()
+        cl_loss = self.cal_cl_loss([users, bundle[:, 0]], aug_graph_1, aug_graph_2)
+        
+        return bpr_loss, a_loss, u_loss, cl_loss
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
@@ -373,11 +406,11 @@ class Demo(nn.Module):
         bundles_gamma = torch.tanh(self.bundle_freq / psi)
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
-        bpr_loss, a_loss, u_loss = self.cal_loss(users_embedding, bundles_embedding, bundles_gamma)
+        bpr_loss, a_loss, u_loss, cl_loss = self.cal_loss(users, bundles, users_embedding, bundles_embedding, bundles_gamma)
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, c_loss + au_loss
+        return bpr_loss, cl_loss + au_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
