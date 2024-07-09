@@ -78,13 +78,11 @@ class Demo(nn.Module):
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
-        # self.BI_aggregation_graph_ori = self.get_bundle_agg_graph(self.bi_graph)
         
         # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
         self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
-        # self.BI_aggregation_graph = self.get_bundle_agg_graph(self.bi_graph, conf['agg_ed_ratio'])
         
         self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, conf['hist_ed_ratio'])
         
@@ -121,7 +119,7 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        return to_tensor(birpartite_graph @ self.ui_graph.T @ self.ui_graph).to(device)
+        return to_tensor(birpartite_graph).to(device)
     
     # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
     #     device = self.device
@@ -136,16 +134,6 @@ class Demo(nn.Module):
         
     #     return to_tensor(birpartite_graph).to(device)
     
-    def get_bundle_agg_graph(self, birpartite_graph, modification_ratio=0):
-        device = self.device
-        if modification_ratio:
-            graph = birpartite_graph.tocoo()
-            values = np_edge_dropout(graph.data, modification_ratio)
-            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-            
-        items_pop = self.ui_graph.T @ self.ui_graph
-        
-        return to_tensor(birpartite_graph @ items_pop).to(device)
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device

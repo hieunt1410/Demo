@@ -22,7 +22,7 @@ def gen_bun_attention_graph(dataset, path):
         be += w.reshape(1, -1).tolist()[0]
 
     bi_graph = sp.coo_matrix((be, (graph.row, graph.col)), shape=graph.shape).tocsr()
-
+    bi_graph = bi_graph @ ui_graph.T @ ui_graph
     # if modification_ratio:
     #     graph = bi_graph.tocoo()
     #     values = np_edge_dropout(graph.data, modification_ratio)
