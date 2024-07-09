@@ -255,7 +255,7 @@ class Demo(nn.Module):
     def graph_reconstruction(self):
         drop_adj = []
         for k in range(self.num_layers):
-            drop_adj.append(self.random_graph_aug(self.randon_graph_aug(self.UI_propagation_graph_ori)))
+            drop_adj.append(self.random_graph_aug(self.random_graph_aug(self.UI_propagation_graph_ori)))
         
         return drop_adj
     
