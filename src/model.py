@@ -162,7 +162,6 @@ class Demo(nn.Module):
         d_inv[np.isinf(d_inv)] = 0.
         d_mat = sp.diags(d_inv, format='csr', dtype=np.float32)
         
-        # norm_adj = d_mat.dot(propagation_graph).dot(d_mat)
         norm_adj = d_mat @ propagation_graph @ d_mat
         
         return to_tensor(norm_adj).to(device)        
@@ -348,8 +347,8 @@ class Demo(nn.Module):
         u_loss = (bundle_uniform + user_uniform)
         a_loss = (bundle_align + user_align)
         
-        aug_graph_1 = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
-        aug_graph_2 = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
+        aug_graph_1 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
+        aug_graph_2 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
         return bpr_loss, a_loss, u_loss, cl_loss
