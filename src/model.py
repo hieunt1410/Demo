@@ -231,7 +231,7 @@ class Demo(nn.Module):
     def graph_reconstruction(self):
         drop_adj = []
         for k in range(self.num_layers):
-            drop_adj.append(self.random_graph_aug(self.random_graph_aug(self.ub_graph)))
+            drop_adj.append(self.random_graph_aug(self.ub_graph))
         
         return drop_adj
     
@@ -241,7 +241,7 @@ class Demo(nn.Module):
         values = np_edge_dropout(graph.data, self.conf['hist_ed_ratio'])
         graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        return to_tensor(graph).to(self.device)
+        return to_tensor(laplace_transform(graph)).to(self.device)
     
     
     def propagate(self, test=False):       
