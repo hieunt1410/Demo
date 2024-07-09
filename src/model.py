@@ -362,7 +362,7 @@ class Demo(nn.Module):
         
         aug_graph_1 = self.graph_reconstruction()
         aug_graph_2 = self.graph_reconstruction()
-        cl_loss = self.cal_cl_loss([users, bundle[:, 0]], aug_graph_1, aug_graph_2)
+        cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
         return bpr_loss, a_loss, u_loss, cl_loss
 
