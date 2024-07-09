@@ -231,21 +231,6 @@ class Demo(nn.Module):
         return aggregated_feature
     
     
-    def graph_reconstruction(self):
-        drop_adj = []
-        for k in range(self.num_layers):
-            drop_adj.append(self.random_graph_aug(self.ub_graph))
-        
-        return drop_adj
-    
-            
-    def random_graph_aug(self, graph):
-        graph = graph.tocoo()
-        values = np_edge_dropout(graph.data, self.conf['hist_ed_ratio'])
-        graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        
-        return to_tensor(laplace_transform(graph)).to(self.device)
-    
     
     def propagate(self, test=False):       
         if test:
@@ -363,8 +348,8 @@ class Demo(nn.Module):
         u_loss = (bundle_uniform + user_uniform)
         a_loss = (bundle_align + user_align)
         
-        aug_graph_1 = self.graph_reconstruction()
-        aug_graph_2 = self.graph_reconstruction()
+        aug_graph_1 = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
+        aug_graph_2 = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
         return bpr_loss, a_loss, u_loss, cl_loss
