@@ -121,7 +121,7 @@ class Demo(nn.Module):
             values = np_edge_dropout(graph.data, modification_ratio)
             birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-        return to_tensor(birpartite_graph).to(device)
+        return to_tensor(birpartite_graph @ self.ui_graph.T @ self.ui_graph).to(device)
     
     # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
     #     device = self.device
@@ -352,6 +352,14 @@ class Demo(nn.Module):
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
         return bpr_loss, a_loss, u_loss, cl_loss
+    
+    def l2_reg_loss(self, reg, *args):
+        emb_loss = 0
+        for emb in args:
+            emb_loss += torch.norm(emb)
+            
+        return emb_loss * reg
+        
 
     def forward(self, batch, ED_dropout, psi=1.):
         if ED_dropout:
@@ -373,7 +381,8 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, cl_loss + au_loss
+        # return bpr_loss, cl_loss + au_loss
+        return a_loss + cl_loss, u_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
