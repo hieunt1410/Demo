@@ -282,12 +282,12 @@ class Demo(nn.Module):
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
-            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_bundles_feat)
+            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_items_feat)
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
-            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_bundles_feat)
+            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_items_feat)
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
