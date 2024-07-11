@@ -269,7 +269,7 @@ class Demo(nn.Module):
         return aggregated_feature
     
     def MLP(self, Afeat, Bfeat):
-        feats = torch.cat([Afeat, Bfeat], dim=1)
+        feats = torch.cat([Afeat, Bfeat], dim=0)
         feats = self.ff(feats)
         
         return torch.split(feats, [self.num_users, self.num_bundles], dim=1)
