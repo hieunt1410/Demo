@@ -97,7 +97,7 @@ class Demo(nn.Module):
         self.A = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.A)
         self.ff = nn.Sequential(
-            nn.Linear(self.num_users + self.num_items, self.num_users + self.num_items),
+            nn.Linear(self.embedding_size, self.embedding_size),
             nn.ReLU()          
         )
         
