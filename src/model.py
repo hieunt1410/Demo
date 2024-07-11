@@ -398,7 +398,7 @@ class Demo(nn.Module):
         aug_graph_2 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
-        cons_loss = - torch.mean(torch.log(torch.exp(torch.sum(hist_users_feat[:, 0] * hist_bundles_feat[:, 0], 1)) / torch.exp(torch.sum(hist_users_feat[:, 1] * hist_bundles_feat[:, 1], 1))))
+        cons_loss = - torch.mean(torch.log(torch.exp(torch.sum(hist_users_feat[:, 0] * hist_bundles_feat[:, 0], -1)) / torch.exp(torch.sum(hist_users_feat[:, 1] * hist_bundles_feat[:, 1], -1))))
         
         return bpr_loss, a_loss, u_loss, cl_loss, cons_loss
     
