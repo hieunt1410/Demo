@@ -221,7 +221,6 @@ class Demo(nn.Module):
     
     def one_propagate_(self, graph, Afeat, Bfeat, test):
         device = self.device
-        graph = graph.to(device)
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
@@ -284,7 +283,7 @@ class Demo(nn.Module):
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
             
         ub_pred = UB_users_feat @ UB_bundles_feat.T
-        ub_pred_filtered = torch.where(ub_pred > 0, ub_pred, torch.zeros_like(ub_pred))
+        ub_pred_filtered = torch.where(ub_pred > 0, ub_pred, torch.zeros_like(ub_pred)).cpu()
         UB_reconstructed_graph_ori = self.get_propagation_graph(ub_pred_filtered)
         UB_reconstructed_graph = self.get_propagation_graph(ub_pred_filtered, self.conf['hist_ed_ratio'])
         
