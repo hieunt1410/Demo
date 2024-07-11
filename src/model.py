@@ -284,7 +284,7 @@ class Demo(nn.Module):
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
             
         ub_pred = UB_users_feat @ UB_bundles_feat.T
-        ub_pred_filtered = torch.where(ub_pred > 0, ub_pred, torch.zeros_like(ub_pred)).cpu().detach().numpy()
+        ub_pred_filtered = torch.where(ub_pred > 0, ub_pred, torch.zeros_like(ub_pred))
         UB_reconstructed_graph_ori = self.get_propagation_graph(ub_pred_filtered)
         UB_reconstructed_graph = self.get_propagation_graph(ub_pred_filtered, self.conf['hist_ed_ratio'])
         
