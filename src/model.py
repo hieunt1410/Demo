@@ -281,17 +281,17 @@ class Demo(nn.Module):
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_items_feat)
             ui_scores = UI_users_feat @ UI_items_feat.T
-            ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores))
-            ui_graph = sp.csr_matrix(ui_graph.cpu().detach().numpy())
-            UI_users_feat, UI_items_feat = self.one_propagate_(ui_graph, self.users_feat, self.items_feat, test)
+            ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores)).cpu().detach().numpy()
+            # ui_graph = sp.csr_matrix(ui_graph.cpu().detach().numpy())
+            UI_users_feat, UI_items_feat = self.one_propagate_(ui_graph, self.users_feat, self.items_feat, False)
             
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_items_feat)
             ui_scores = UI_users_feat @ UI_items_feat.T
-            ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores))
-            ui_graph = sp.csr_matrix(ui_graph.cpu().detach().numpy())
-            UI_users_feat, UI_items_feat = self.one_propagate_(ui_graph, self.users_feat, self.items_feat, test)
+            ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores)).cpu().detach().numpy()
+            # ui_graph = sp.csr_matrix(ui_graph.cpu().detach().numpy())
+            UI_users_feat, UI_items_feat = self.one_propagate_(ui_graph, self.users_feat, self.items_feat, False)
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
