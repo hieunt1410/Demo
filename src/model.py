@@ -268,17 +268,17 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):       
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, test)
 
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
             
