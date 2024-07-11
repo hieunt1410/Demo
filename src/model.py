@@ -224,7 +224,7 @@ class Demo(nn.Module):
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
-        if not cold:
+        if not test:
             for i in range(self.num_layers):
                 if isinstance(graph, list):
                     feats = graph[i] @ feats
