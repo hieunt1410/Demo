@@ -253,18 +253,26 @@ class Demo(nn.Module):
                 all_feats.append(feats)
         
         all_feats = torch.stack(all_feats, dim=1)
-        all_feats = torch.sum(all_feats, dim=1)
+        all_feats = torch.mean(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
         return Afeat, Bfeat
             
     
-    def one_aggregate(self, bundle_agg_graph, node_feature, test):
-        aggregated_feature = bundle_agg_graph @ node_feature
+    def one_aggregate(self, node_feature, test):
+        if test:
+            aggregated_feature = self.BI_aggregation_graph_ori @ node_feature
+        else:
+            aggregated_feature = self.BI_aggregation_graph @ node_feature
         
         return aggregated_feature
     
+    def MLP(self, Afeat, Bfeat):
+        feats = torch.cat([Afeat, Bfeat], dim=1)
+        feats = self.ff(feats)
+        
+        return torch.split(feats, [self.num_users, self.num_bundles], dim=1)
     
     def propagate(self, test=False):       
         if test:
@@ -274,21 +282,16 @@ class Demo(nn.Module):
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_bundles_feat)
+            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
             
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph_ori, UI_items_feat, test)
-
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
-            
-            UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
-            
-        # ub_pred = UB_users_feat @ UB_bundles_feat.T
-        # ub_pred_filtered = torch.where(ub_pred > 0, ub_pred, torch.zeros_like(ub_pred)).cpu().detach().numpy()
-        # UB_reconstructed_graph_ori = self.get_propagation_graph(ub_pred_filtered)
-        # UB_reconstructed_graph = self.get_propagation_graph(ub_pred_filtered, self.conf['hist_ed_ratio'])
-        # UB_reconstructed_graph_ori = self.ff(UB_reconstructed_graph_ori)
-        # UB_reconstructed_graph = self.ff(UB_reconstructed_graph)
-
+            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_bundles_feat)
+            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
+                        
+        UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
+        
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
