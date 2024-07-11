@@ -430,7 +430,7 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, cl_loss + au_loss _ cons_loss
+        return bpr_loss, cl_loss + au_loss + cons_loss
         # return a_loss + cl_loss, u_loss
         
     def evaluate(self, propagate_result, users, psi=1):
