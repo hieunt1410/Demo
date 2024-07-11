@@ -221,6 +221,7 @@ class Demo(nn.Module):
     
     def one_propagate_(self, graph, Afeat, Bfeat, test):
         device = self.device
+        graph = graph.to(device)
         feats = torch.cat((Afeat, Bfeat), dim=0)
         all_feats = [feats]
         
@@ -288,9 +289,9 @@ class Demo(nn.Module):
         UB_reconstructed_graph = self.get_propagation_graph(ub_pred_filtered, self.conf['hist_ed_ratio'])
         
         if test:
-            UB_users_feat_, UB_bundles_feat_ = self.one_propagate(UB_reconstructed_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat_, UB_bundles_feat_ = self.one_propagate_(UB_reconstructed_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
-            UB_users_feat_, UB_bundles_feat_ = self.one_propagate(UB_reconstructed_graph, self.users_feat, self.bundles_feat, test)
+            UB_users_feat_, UB_bundles_feat_ = self.one_propagate_(UB_reconstructed_graph, self.users_feat, self.bundles_feat, test)
 
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat_, UB_bundles_feat_
@@ -375,8 +376,8 @@ class Demo(nn.Module):
         aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma.unsqueeze(2))
         hist_bundles_feat_ = hist_bundles_feat * bundles_gamma.unsqueeze(2)
         
-        # pred = torch.sum(aff_users_feat * aff_bundles_feat_, 2) + torch.sum(hist_users_feat * hist_bundles_feat_, 2)
-        pred = torch.sum(hist_users_feat * hist_bundles_feat, 2)
+        pred = torch.sum(aff_users_feat * aff_bundles_feat_, 2) + torch.sum(hist_users_feat * hist_bundles_feat_, 2)
+        # pred = torch.sum(hist_users_feat * hist_bundles_feat, 2)
         bpr_loss = cal_bpr_loss(pred)
         
         aff_bundles_feat = aff_bundles_feat[:, 0, :]
