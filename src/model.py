@@ -400,7 +400,7 @@ class Demo(nn.Module):
         
         cons_loss = - torch.mean(torch.log(torch.exp(torch.sum(hist_users_feat[:, 0] * hist_bundles_feat[:, 0], 1)) / torch.exp(torch.sum(hist_users_feat[:, 1] * hist_bundles_feat[:, 1], 1))))
         
-        return bpr_loss, a_loss, u_loss, cl_loss
+        return bpr_loss, a_loss, u_loss, cl_loss, cons_loss
     
     def l2_reg_loss(self, reg, *args):
         emb_loss = 0
@@ -426,11 +426,11 @@ class Demo(nn.Module):
         bundles_gamma = torch.tanh(self.bundle_freq / psi)
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
-        bpr_loss, a_loss, u_loss, cl_loss = self.cal_loss(users, bundles, users_embedding, bundles_embedding, bundles_gamma)
+        bpr_loss, a_loss, u_loss, cl_loss, cons_loss = self.cal_loss(users, bundles, users_embedding, bundles_embedding, bundles_gamma)
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, cl_loss + au_loss
+        return bpr_loss, cl_loss + au_loss _ cons_loss
         # return a_loss + cl_loss, u_loss
         
     def evaluate(self, propagate_result, users, psi=1):
