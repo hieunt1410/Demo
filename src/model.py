@@ -290,7 +290,7 @@ class Demo(nn.Module):
         # UB_reconstructed_graph = self.ff(UB_reconstructed_graph)
 
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
-        hist_users_rep, hist_bundles_rep = UB_users_feat_, UB_bundles_feat_
+        hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
         return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep]
             
