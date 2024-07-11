@@ -283,7 +283,7 @@ class Demo(nn.Module):
             ui_scores = UI_users_feat @ UI_items_feat.T
             ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores)).cpu().detach().numpy()
             UI_propagation_graph = self.get_propagation_graph(ui_graph, self.conf['aff_ed_ratio'])
-            UI_users_feat, UI_items_feat = self.one_propagate_(ui_graph, self.users_feat, self.items_feat, False)
+            UI_users_feat, UI_items_feat = self.one_propagate_(UI_propagation_graph, self.users_feat, self.items_feat, False)
             
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
@@ -291,7 +291,7 @@ class Demo(nn.Module):
             ui_scores = UI_users_feat @ UI_items_feat.T
             ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores)).cpu().detach().numpy()
             UI_propagation_graph = self.get_propagation_graph(ui_graph, self.conf['aff_ed_ratio'])
-            UI_users_feat, UI_items_feat = self.one_propagate_(ui_graph, self.users_feat, self.items_feat, False)
+            UI_users_feat, UI_items_feat = self.one_propagate_(UI_propagation_graph, self.users_feat, self.items_feat, False)
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
