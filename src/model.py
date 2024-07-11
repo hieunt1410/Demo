@@ -288,9 +288,9 @@ class Demo(nn.Module):
         UB_reconstructed_graph = self.get_propagation_graph(ub_pred_filtered, self.conf['hist_ed_ratio'])
         
         if test:
-            UB_users_feat_, UB_bundles_feat_ = self.one_propagate_(UB_reconstructed_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat_, UB_bundles_feat_ = self.one_propagate(UB_reconstructed_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
-            UB_users_feat_, UB_bundles_feat_ = self.one_propagate_(UB_reconstructed_graph, self.users_feat, self.bundles_feat, test)
+            UB_users_feat_, UB_bundles_feat_ = self.one_propagate(UB_reconstructed_graph, self.users_feat, self.bundles_feat, test)
 
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat_, UB_bundles_feat_
