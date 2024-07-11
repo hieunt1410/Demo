@@ -96,6 +96,14 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.items_feat)
         self.A = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.A)
+        self.ff = nn.Sequential(
+            nn.Linear(self.num_users + self.num_bundles, self.embedding_size),
+            nn.ReLU(),
+            nn.Linear(self.embedding_size, self.embedding_size),
+            nn.ReLU(),
+            nn.Linear(self.embedding_size, self.num_users + self.num_bundles)            
+        )
+        
 
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
         device = self.device
@@ -211,6 +219,46 @@ class Demo(nn.Module):
         
         return update_all_emb
     
+    def one_propagate_(self, graph, Afeat, Bfeat, test):
+        device = self.device
+        feats = torch.cat((Afeat, Bfeat), dim=0)
+        all_feats = [feats]
+        
+        if not cold:
+            for i in range(self.num_layers):
+                if isinstance(graph, list):
+                    feats = graph[i] @ feats
+                else:
+                    feats = graph @ feats
+
+                feats = self.dropout(feats)
+                feats = feats / (i + 2)
+                feats = F.normalize(feats, p=2, dim=1)
+                
+                all_feats.append(feats)
+        
+        else:
+            for i in range(self.num_layers):
+                if isinstance(graph, list):
+                    feats = graph[i] @ feats
+                else:
+                    feats = graph @ feats
+
+                feats = self.dropout(feats)
+                feats = feats / (i + 2)
+                feats = F.normalize(feats, p=2, dim=1)
+                
+                feats[Afeat.shape[0]:] = Bfeat
+                
+                all_feats.append(feats)
+        
+        all_feats = torch.stack(all_feats, dim=1)
+        all_feats = torch.sum(all_feats, dim=1)
+        
+        Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
+        
+        return Afeat, Bfeat
+            
     
     def one_aggregate(self, bundle_agg_graph, node_feature, test):
         aggregated_feature = bundle_agg_graph @ node_feature
@@ -218,12 +266,11 @@ class Demo(nn.Module):
         return aggregated_feature
     
     
-    
     def propagate(self, test=False):       
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
@@ -234,9 +281,19 @@ class Demo(nn.Module):
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
             UI_bundles_feat = self.one_aggregate(self.BI_aggregation_graph, UI_items_feat, test)#bundle feature in UI view
+            
+        ub_pred = UB_users_feat @ UB_bundles_feat.T
+        ub_pred_filtered = torch.where(ub_pred > 0, ub_pred, torch.zeros_like(ub_pred))
+        UB_reconstructed_graph_ori = self.get_propagation_graph(ub_pred_filtered)
+        UB_reconstructed_graph = self.get_propagation_graph(ub_pred_filtered, self.conf['hist_ed_ratio'])
+        
+        if test:
+            UB_users_feat_, UB_bundles_feat_ = self.one_propagate_(UB_reconstructed_graph_ori, self.users_feat, self.bundles_feat, test)
+        else:
+            UB_users_feat_, UB_bundles_feat_ = self.one_propagate_(UB_reconstructed_graph, self.users_feat, self.bundles_feat, test)
 
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
-        hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
+        hist_users_rep, hist_bundles_rep = UB_users_feat_, UB_bundles_feat_
         
         return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep]
             
@@ -249,7 +306,6 @@ class Demo(nn.Module):
         return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
     
     def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
-
         pos, neg = bundles[:, 0], bundles[:, 1]
         batch_pop, batch_unpop = split_batch_item(pos, self.bundle_freq)
         
@@ -319,7 +375,8 @@ class Demo(nn.Module):
         aff_bundles_feat_ = aff_bundles_feat * (1 - bundles_gamma.unsqueeze(2))
         hist_bundles_feat_ = hist_bundles_feat * bundles_gamma.unsqueeze(2)
         
-        pred = torch.sum(aff_users_feat * aff_bundles_feat_, 2) + torch.sum(hist_users_feat * hist_bundles_feat_, 2)
+        # pred = torch.sum(aff_users_feat * aff_bundles_feat_, 2) + torch.sum(hist_users_feat * hist_bundles_feat_, 2)
+        pred = torch.sum(hist_users_feat * hist_bundles_feat, 2)
         bpr_loss = cal_bpr_loss(pred)
         
         aff_bundles_feat = aff_bundles_feat[:, 0, :]
@@ -369,8 +426,8 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        # return bpr_loss, cl_loss + au_loss
-        return a_loss + cl_loss, u_loss
+        return bpr_loss, cl_loss + au_loss
+        # return a_loss + cl_loss, u_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
