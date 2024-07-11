@@ -13,11 +13,14 @@ from model import *
 from dataset import Datasets
 from metrics import get_metrics
 
+from gen_bun_atten_graph import gen_bun_attention_graph
+
 # Path: src/main.py
 def get_cmd():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', '-d', type=str, default='Youshu', help='dataset name')
     parser.add_argument('--model', '-m', type=str, default='BPR', help='model name')
+    parser.add_argument('--type', '-t', type=str, default='cold', help='train or test')
     
     args = parser.parse_args()
     
@@ -30,6 +33,7 @@ def main():
     params = get_cmd().__dict__
     dataset_name = params['data']
     conf = conf[dataset_name]
+    conf['data_path'] = f'../data/{params["type"]}/'
     
     conf['dataset'] = dataset_name
     conf['model'] = params['model']
@@ -47,6 +51,8 @@ def main():
     torch.manual_seed(2024)
     np.random.seed(2024)
     
+    gen_bun_attention_graph(dataset, conf['data_path'] + dataset_name + 'bun_atten_graph.pkl')
+    
     model = Demo(conf, dataset.graphs, dataset.bundles_freq).to(device)
     optimizer = optim.Adam(model.parameters(), lr=conf['lr'], weight_decay=conf['lambda2'])
     topk_ = conf['topk_valid']
@@ -63,21 +69,21 @@ def main():
             model.train(True)
             optimizer.zero_grad()
             batch = [x.to(device) for x in batch]
-            
+
             bpr_loss, c_loss = model(batch, ED_dropout=True, psi=psi)
-            loss = bpr_loss + c_loss * conf['lambda1']
+            loss = bpr_loss + conf["lambda1"] * c_loss
             loss.backward()
             optimizer.step()
-            
+
             loss_scalar = loss.detach()
             bpr_loss_scalar = bpr_loss.detach()
             c_loss_scalar = c_loss.detach()
-            
-            loss_avg = moving_avg(loss_avg, cur_instance_num, loss_scalar, batch[0].shape[0])
-            bpr_loss_avg = moving_avg(bpr_loss_avg, cur_instance_num, bpr_loss_scalar, batch[0].shape[0])
-            c_loss_avg = moving_avg(c_loss_avg, cur_instance_num, c_loss_scalar, batch[0].shape[0])
-            cur_instance_num += batch[0].shape[0]
-            pbar.set_description(f'Epoch {epoch} | BPR Loss: {bpr_loss_avg:.4f} | Content Loss: {c_loss_avg:.4f} | Total Loss: {loss_avg:.4f}')
+
+            loss_avg = moving_avg(loss_avg, cur_instance_num, loss_scalar, batch[0].size(0))
+            bpr_loss_avg = moving_avg(bpr_loss_avg, cur_instance_num, bpr_loss_scalar, batch[0].size(0))
+            c_loss_avg = moving_avg(c_loss_avg, cur_instance_num, c_loss_scalar, batch[0].size(0))
+            cur_instance_num += batch[0].size(0)
+            pbar.set_description(f'epoch: {epoch:3d} | loss: {loss_avg:8.4f} | bpr_loss: {bpr_loss_avg:8.4f} | c_loss: {c_loss_avg:8.4f}')
             
         if epoch % conf['test_interval'] == 0:
             metrics = {}
@@ -100,7 +106,7 @@ def moving_avg(avg, cur_num, add_value_avg, add_num):
     return (avg * cur_num + add_value_avg * add_num) / (cur_num + add_num)
 
 def form_content(epoch, val_results, test_results, ks):
-    content = f'     Epoch|  Rec@{ks[0]} |  Rec@{ks[1]} |  Rec@{ks[2]} |  Rec@{ks[3]} |' \
+    content = f'  Epoch  |  Rec@{ks[0]} |  Rec@{ks[1]} |  Rec@{ks[2]} |  Rec@{ks[3]} |' \
              f' nDCG@{ks[0]} | nDCG@{ks[1]} | nDCG@{ks[2]} | nDCG@{ks[3]} |\n'
     val_content = f'{epoch:10d}|'
     val_results_recall = val_results['recall']

@@ -5,14 +5,17 @@ Youshu:
   topk: [10, 20, 40, 80]
   topk_valid: 20
 
+
   embedding_size: 64
   num_layers: 1
 
-  aff_ed_ratio: 0.5
-  hist_ed_ratio: 0.5
-  agg_ed_ratio: 0.5
+  aff_ed_ratio: 0.3
+  hist_ed_ratio: 0.3
+  agg_ed_ratio: 0.3
 
-  lr: 1.0e-3
+  residual_coff: 0.6
+
+  lr: 2.0e-3
   lambda2: 1.0e-4
   lambda1: 0.1
 
@@ -21,6 +24,7 @@ Youshu:
   epochs: 100
   test_interval: 5
 
+  aug_type: 'MD'
 
 NetEase:
   data_path: '../data/all'
@@ -36,6 +40,8 @@ NetEase:
   hist_ed_ratio: 0.3
   agg_ed_ratio: 0.1
 
+  residual_coff: 0.6
+
   lr: 1.0e-3
   lambda2: 1.0e-4
   lambda1: 0.1
@@ -45,6 +51,7 @@ NetEase:
   epochs: 100
   test_interval: 5
 
+  aug_type: 'Noise'
 
 iFashion:
   data_path: '../data/cold'
@@ -60,6 +67,8 @@ iFashion:
   hist_ed_ratio: 0.2
   agg_ed_ratio: 0
 
+  residual_coff: 0.6
+  
   lr: 1.0e-3
   lambda2: 4.0e-5
   lambda1: 0.5
@@ -68,3 +77,33 @@ iFashion:
 
   epochs: 100
   test_interval: 5
+
+  aug_type: 'MD'
+
+Steam:
+  data_path: '../data/warm'
+  batch_size_train: 2048
+  batch_size_test: 2048
+  topk: [1, 3, 5, 10]
+  topk_valid: 3
+
+
+  embedding_size: 64
+  num_layers: 1
+
+  aff_ed_ratio: 0.2
+  hist_ed_ratio: 0.2
+  agg_ed_ratio: 0.2
+
+  residual_coff: 0.4
+
+  lr: 1.0e-2
+  lambda2: 1.0e-4
+  lambda1: 0.1
+
+  max_temp: 10000
+
+  epochs: 100
+  test_interval: 5
+
+  aug_type: 'MD'
