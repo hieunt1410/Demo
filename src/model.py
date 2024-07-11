@@ -269,7 +269,7 @@ class Demo(nn.Module):
         feats = torch.cat([Afeat, Bfeat], dim=0)
         feats = self.ff(feats)
         
-        return torch.split(feats, [self.num_users, self.num_bundles], dim=0)
+        return torch.split(feats, [self.num_users, self.num_items], dim=0)
     
     def propagate(self, test=False):       
         if test:
