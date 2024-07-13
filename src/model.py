@@ -371,7 +371,6 @@ class Demo(nn.Module):
         hist_bundles_feat_ = hist_bundles_feat * bundles_gamma.unsqueeze(2)
         
         pred = torch.sum(aff_users_feat * aff_bundles_feat_, 2) + torch.sum(hist_users_feat * hist_bundles_feat_, 2)
-        # pred = torch.sum(hist_users_feat * hist_bundles_feat, 2)
         bpr_loss = cal_bpr_loss(pred)
         
         aff_bundles_feat = aff_bundles_feat[:, 0, :]
@@ -421,7 +420,7 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        siu_emb = [i[bundles] for i in siu]
+        siu_emb = siu[bundles]
         siu_pos, siu_neg = siu_emb
         
         e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * siu_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * siu_neg), 0)))
