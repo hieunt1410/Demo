@@ -421,7 +421,7 @@ class Demo(nn.Module):
         au_loss = a_loss + u_loss
         
         siu_emb = siu[bundles]
-        siu_pos, siu_neg = siu_emb
+        siu_pos, siu_neg = siu_emb[:, 0], siu_emb[:, 1]
         
         e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * siu_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * siu_neg), 0)))
         
