@@ -94,12 +94,6 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
-        self.A = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
-        nn.init.xavier_normal_(self.A)
-        self.ff = nn.Sequential(
-            nn.Linear(self.embedding_size, self.embedding_size),
-            nn.ReLU()          
-        )
         
 
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
@@ -265,33 +259,18 @@ class Demo(nn.Module):
         
         return aggregated_feature
     
-    def MLP(self, Afeat, Bfeat):
-        feats = torch.cat([Afeat, Bfeat], dim=0)
-        feats = self.ff(feats)
-        
-        return torch.split(feats, [self.num_users, self.num_items], dim=0)
-    
     def propagate(self, test=False):       
         if test:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
+            
         else:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
-            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_items_feat)
-            ui_scores = UI_users_feat @ UI_items_feat.T
-            ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores)).cpu().detach().numpy()
-            UI_propagation_graph = self.get_propagation_graph(ui_graph, self.conf['aff_ed_ratio'])
-            UI_users_feat, UI_items_feat = self.one_propagate_(UI_propagation_graph, self.users_feat, self.items_feat, False)
-            
+
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
-            UI_users_feat, UI_items_feat = self.MLP(UI_users_feat, UI_items_feat)
-            ui_scores = UI_users_feat @ UI_items_feat.T
-            ui_graph = torch.where(ui_scores > 0.5, torch.ones_like(ui_scores), torch.zeros_like(ui_scores)).cpu().detach().numpy()
-            UI_propagation_graph = self.get_propagation_graph(ui_graph, self.conf['aff_ed_ratio'])
-            UI_users_feat, UI_items_feat = self.one_propagate_(UI_propagation_graph, self.users_feat, self.items_feat, False)
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
@@ -398,8 +377,6 @@ class Demo(nn.Module):
         aug_graph_1 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         aug_graph_2 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
-        
-        # cons_loss = - torch.mean(torch.log(torch.exp(hist_users_feat[:, 0] * hist_bundles_feat[:, 0]) / torch.exp(torch.sum(hist_users_feat[:, 1] * hist_bundles_feat[:, 1], -1))))
         
         return bpr_loss, a_loss, u_loss, cl_loss
     
