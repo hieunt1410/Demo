@@ -94,6 +94,10 @@ class Demo(nn.Module):
         nn.init.xavier_normal_(self.bundles_feat)
         self.items_feat = nn.Parameter(torch.FloatTensor(self.num_items, self.embedding_size))
         nn.init.xavier_normal_(self.items_feat)
+        self.MLP = nn.Sequential(
+            DenseBatchFCTanh(self.embedding_size, self.embedding_size, self.l2_norm, True),
+            DenseFC(self.embedding_size, self.embedding_size, self.l2_norm)
+        )
         
 
     def get_propagation_graph(self, bipartite_graph, modification_ratio=0):
@@ -271,6 +275,10 @@ class Demo(nn.Module):
 
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
+            
+        UI_concat_feat = self.MLP(torch.cat((UI_users_feat, UI_items_feat), 0))
+        UI_users_feat, UI_items_feat = torch.split(UI_concat_feat, (self.num_users, self.num_items), 0)
+        UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, UI_users_feat, UI_items_feat, test)        
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
@@ -408,8 +416,7 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, cl_loss + au_loss
-        # return a_loss + cl_loss, u_loss
+        return bpr_loss, 0.1 * cl_loss + au_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
