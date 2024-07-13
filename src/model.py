@@ -285,7 +285,7 @@ class Demo(nn.Module):
         else:
             UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, UB_users_feat, UB_bundles_feat_, test)     
                         
-        UI_bundles_feat = self.one_aggregate(UI_items_feat_, test)
+        UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat, 
