@@ -265,32 +265,32 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):       
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
             
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
 
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
-        UB_concat_feat = self.MLP(torch.cat((UB_users_feat, UB_bundles_feat), 0))
-        UB_users_feat, UB_bundles_feat_ = torch.split(UB_concat_feat, (self.num_users, self.num_bundles), 0)
+        UI_concat_feat = self.MLP(torch.cat((UB_users_feat, UB_bundles_feat), 0))
+        UI_users_feat, UI_items_feat_ = torch.split(UI_concat_feat, (self.num_users, self.num_items), 0)
         
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, UB_users_feat, UB_bundles_feat_, test)
-            
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, UI_users_feat, UI_items_feat_, test)
+
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, UB_users_feat, UB_bundles_feat_, test)     
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, UI_users_feat, UI_items_feat_, test)  
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat, 
         
-        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep], UB_bundles_feat_
+        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep], UI_items_feat_
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
@@ -420,10 +420,10 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        siu_emb = siu[bundles]
-        siu_pos, siu_neg = siu_emb[:, 0], siu_emb[:, 1]
+        item_emb_pos = siu[bundles[:, 0]]
+        item_emb_neg = siu[bundles[:, 1]]
         
-        e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * siu_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * siu_neg), 0)))
+        e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * item_emb_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * item_emb_neg), 0)))
         
         return bpr_loss, au_loss + 0.1 * e_loss
         
