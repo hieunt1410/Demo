@@ -276,7 +276,7 @@ class Demo(nn.Module):
         else:
             UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
-        UI_concat_feat = self.MLP(torch.cat((UB_users_feat, UB_bundles_feat), 0))
+        UI_concat_feat = self.MLP(torch.cat((UI_users_feat, UI_items_feat), 0))
         UI_users_feat, UI_items_feat_ = torch.split(UI_concat_feat, (self.num_users, self.num_items), 0)
         
         if test:
