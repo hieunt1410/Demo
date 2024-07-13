@@ -416,8 +416,8 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        items_embedding_pos = items_feat[bundles[:, 0]]
-        item_embedding_neg = items_feat[bundles[:, 1]]
+        items_embedding_pos = items_feat[bundles[0]]
+        item_embedding_neg = items_feat[bundles[1]]
         e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * items_embedding_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * item_embedding_neg), 1)))
         
         return bpr_loss, 0.1 * cl_loss + au_loss + 0.1 * e_loss
