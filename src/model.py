@@ -420,7 +420,7 @@ class Demo(nn.Module):
         item_embedding_neg = items_feat[bundles[:, 1]]
         e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * items_embedding_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * item_embedding_neg), 0)))
         
-        return bpr_loss, 0.1 * cl_loss + au_loss + 0.1 * e_loss
+        return bpr_loss, au_loss + 0.1 * e_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat, items_feat = propagate_result
