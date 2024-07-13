@@ -418,7 +418,6 @@ class Demo(nn.Module):
         
         items_embedding_pos = items_feat[bundles[:, 0]]
         item_embedding_neg = items_feat[bundles[:, 1]]
-        print(users_embedding[0][:, 0].shape, items_embedding_pos.shape)
         e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * items_embedding_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * item_embedding_neg), 0)))
         
         return bpr_loss, 0.1 * cl_loss + au_loss + 0.1 * e_loss
