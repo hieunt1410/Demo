@@ -282,10 +282,10 @@ class Demo(nn.Module):
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
-        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
-        hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
+        aff_users_rep, aff_bundles_rep, aff_items_feat = UI_users_feat, UI_bundles_feat, UI_items_feat
+        hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat, 
         
-        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep]
+        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep], aff_items_feat
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
@@ -386,6 +386,8 @@ class Demo(nn.Module):
         aug_graph_2 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
+        
+        
         return bpr_loss, a_loss, u_loss, cl_loss
     
     def l2_reg_loss(self, reg, *args):
@@ -405,7 +407,7 @@ class Demo(nn.Module):
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
         users, bundles = batch
-        users_feat, bundles_feat = self.propagate()
+        users_feat, bundles_feat, items_feat = self.propagate()
         
         users_embedding = [i[users].expand(-1, bundles.shape[1], -1) for i in users_feat]
         bundles_embedding = [i[bundles] for i in bundles_feat]
@@ -416,7 +418,9 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        return bpr_loss, 0.1 * cl_loss + au_loss
+        e_loss = -torch.mean(torch.log(torch.exp(users_feat[:, 0] @ items_feat.T) / torch.sum(torch.exp(users_feat[:, 0] @ items_feat.T), 1)))
+        
+        return bpr_loss, 0.1 * cl_loss + au_loss + 0.1 * e_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
