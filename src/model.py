@@ -423,7 +423,7 @@ class Demo(nn.Module):
         return bpr_loss, 0.1 * cl_loss + au_loss + 0.1 * e_loss
         
     def evaluate(self, propagate_result, users, psi=1):
-        users_feat, bundles_feat = propagate_result
+        users_feat, bundles_feat, items_feat = propagate_result
         aff_users_feat, hist_users_feat = [i[users] for i in users_feat]
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         bundle_gamma = torch.tanh(self.bundle_freq / psi)
