@@ -265,27 +265,32 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):       
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
             
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)#user feature in UB view, bundle feature in UB view
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)
             
         if test:
-            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
 
         else:
-            UI_users_feat, UI_items_feat = self.one_propagate_(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
+            UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, self.users_feat, self.items_feat, test)
             
-        UI_concat_feat = self.MLP(torch.cat((UI_users_feat, UI_items_feat), 0))
-        UI_users_feat, UI_items_feat = torch.split(UI_concat_feat, (self.num_users, self.num_items), 0)
-        UI_users_feat, UI_items_feat_ = self.one_propagate(self.UI_propagation_graph, UI_users_feat, UI_items_feat, test)        
+        UB_concat_feat = self.MLP(torch.cat((UB_users_feat, UB_bundles_feat), 0))
+        UB_users_feat, UB_bundles_feat_ = torch.split(UI_concat_feat, (self.num_users, self.num_bundles), 0)
+        
+        if test:
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, UB_users_feat, UB_bundles_feat_, test)
+            
+        else:
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, UB_users_feat, UB_bundles_feat_, test)     
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat_, test)
         
-        aff_users_rep, aff_bundles_rep, aff_items_feat = UI_users_feat, UI_bundles_feat, UI_items_feat
+        aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat, 
         
-        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep], aff_items_feat
+        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep], UB_bundles_feat_
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
@@ -405,7 +410,7 @@ class Demo(nn.Module):
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
         users, bundles = batch
-        users_feat, bundles_feat, items_feat = self.propagate()
+        users_feat, bundles_feat, siu = self.propagate()
         
         users_embedding = [i[users].expand(-1, bundles.shape[1], -1) for i in users_feat]
         bundles_embedding = [i[bundles] for i in bundles_feat]
@@ -416,14 +421,15 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        items_embedding_pos = items_feat[bundles[:, 0]]
-        item_embedding_neg = items_feat[bundles[:, 1]]
-        e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * items_embedding_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * item_embedding_neg), 0)))
+        siu_emb = [i[bundles] for i in siu]
+        siu_pos, siu_neg = siu_emb
+        
+        e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * siu_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * siu_neg), 0)))
         
         return bpr_loss, au_loss + 0.1 * e_loss
         
     def evaluate(self, propagate_result, users, psi=1):
-        users_feat, bundles_feat, items_feat = propagate_result
+        users_feat, bundles_feat, siu = propagate_result
         aff_users_feat, hist_users_feat = [i[users] for i in users_feat]
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         bundle_gamma = torch.tanh(self.bundle_freq / psi)
