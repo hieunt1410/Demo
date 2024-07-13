@@ -278,9 +278,9 @@ class Demo(nn.Module):
             
         UI_concat_feat = self.MLP(torch.cat((UI_users_feat, UI_items_feat), 0))
         UI_users_feat, UI_items_feat = torch.split(UI_concat_feat, (self.num_users, self.num_items), 0)
-        UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph, UI_users_feat, UI_items_feat, test)        
+        UI_users_feat, UI_items_feat_ = self.one_propagate(self.UI_propagation_graph, UI_users_feat, UI_items_feat, test)        
                         
-        UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
+        UI_bundles_feat = self.one_aggregate(UI_items_feat_, test)
         
         aff_users_rep, aff_bundles_rep, aff_items_feat = UI_users_feat, UI_bundles_feat, UI_items_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat, 
@@ -386,8 +386,6 @@ class Demo(nn.Module):
         aug_graph_2 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
-        
-        
         return bpr_loss, a_loss, u_loss, cl_loss
     
     def l2_reg_loss(self, reg, *args):
@@ -418,7 +416,9 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        e_loss = -torch.mean(torch.log(torch.exp(users_feat[:, 0] @ items_feat.T) / torch.sum(torch.exp(users_feat[:, 0] @ items_feat.T), 1)))
+        items_embedding_pos = items_feat[bundles[:, 0]]
+        item_embedding_neg = items_feat[bundles[:, 1]]
+        e_loss = -torch.mean(torch.log(torch.exp(users_embedding[0][:, 0] * items_embedding_pos) / torch.sum(torch.exp(users_embedding[0][:, 1] * item_embedding_neg), 1)))
         
         return bpr_loss, 0.1 * cl_loss + au_loss + 0.1 * e_loss
         
