@@ -152,7 +152,7 @@ class Demo(nn.Module):
         
         norm_adj = d_mat @ propagation_graph @ d_mat
         
-        return to_tensor(laplace_transform(norm_adj)).to(device)        
+        return to_tensor(norm_adj).to(device)        
         
         
     def one_propagate(self, graph, Afeat, Bfeat, test):
