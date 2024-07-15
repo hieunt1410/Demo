@@ -73,15 +73,15 @@ class Demo(nn.Module):
         self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
         
         
-        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         
-        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
@@ -393,7 +393,8 @@ class Demo(nn.Module):
         if ED_dropout:
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
             
-            self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
 
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
@@ -411,7 +412,7 @@ class Demo(nn.Module):
         
         reg_loss = self.l2_reg_loss(self.l2_norm, self.users_feat[users], self.bundles_feat[bundles[:, 0]], self.bundles_feat[bundles[:, 1]])
         
-        return bpr_loss, au_loss, c_loss + cl_loss + reg_loss / len(users)
+        return bpr_loss, au_loss, c_loss + reg_loss / len(users)
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
