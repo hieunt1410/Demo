@@ -70,14 +70,14 @@ def main():
             optimizer.zero_grad()
             batch = [x.to(device) for x in batch]
 
-            bpr_loss, c_loss = model(batch, ED_dropout=True, psi=psi)
-            loss = bpr_loss + conf["lambda1"] * c_loss
+            bpr_loss, au_loss, c_loss = model(batch, ED_dropout=True, psi=psi)
+            loss = bpr_loss + conf["lambda1"] * au_loss + 0.1 * c_loss
             loss.backward()
             optimizer.step()
 
             loss_scalar = loss.detach()
             bpr_loss_scalar = bpr_loss.detach()
-            c_loss_scalar = c_loss.detach()
+            c_loss_scalar = au_loss.detach()
 
             loss_avg = moving_avg(loss_avg, cur_instance_num, loss_scalar, batch[0].size(0))
             bpr_loss_avg = moving_avg(bpr_loss_avg, cur_instance_num, bpr_loss_scalar, batch[0].size(0))
