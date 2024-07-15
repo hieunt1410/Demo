@@ -74,7 +74,7 @@ class Demo(nn.Module):
         
         
         self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
