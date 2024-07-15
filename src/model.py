@@ -408,7 +408,7 @@ class Demo(nn.Module):
         c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        reg_loss = self.l2_reg_loss(self.l2_norm, self.users_feat, self.bundles_feat, self.items_feat)
+        reg_loss = self.l2_reg_loss(self.l2_norm, users_embedding, bundles_embedding)
         
         return bpr_loss, au_loss + 0.1 * cl_loss + 0.1 * reg_loss
         
