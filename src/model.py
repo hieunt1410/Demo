@@ -10,7 +10,8 @@ import pickle
 def cal_bpr_loss(pred):
     negs =  pred[:, 1].unsqueeze(1)
     pos = pred[:, 0].unsqueeze(1)
-    loss = -torch.mean(torch.log(torch.sigmoid(pos - negs)))
+    # loss = -torch.mean(torch.log(torch.sigmoid(pos - negs)))
+    loss = torch.mean(torch.nn.functional.softplus(negs - pos))
     
     return loss
 
