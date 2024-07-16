@@ -53,7 +53,7 @@ NetEase:
 
   aug_type: 'Noise'
 
-iFashion:
+iFashion2:
   data_path: '../data/cold'
   batch_size_train: 2048
   batch_size_test: 2048
