@@ -107,7 +107,7 @@ class Datasets():
         values = np.ones(len(ui_pairs))
         ui_graph = sp.coo_matrix((values, (indices[:, 0], indices[:, 1])), shape=(self.num_users, self.num_items)).tocsr()
         
-        return ui_pairs, ui_graph
+        return ui_pairs, ui_graph[:10000]
     
     def get_ub(self, mode):
         with open(os.path.join(self.path, self.name, f'user_bundle_{mode}.txt'), 'r') as f:
@@ -117,4 +117,4 @@ class Datasets():
         values = np.ones(len(ub_pairs))
         ub_graph = sp.coo_matrix((values, (indices[:, 0], indices[:, 1])), shape=(self.num_users, self.num_bundles)).tocsr()
         
-        return ub_pairs, ub_graph
+        return ub_pairs, ub_graph[:10000]
