@@ -1,2 +1,3 @@
-ui.txt
-visualize.ipynb
+./visualize.ipynb
+./models/*
+./__pycache__/*
