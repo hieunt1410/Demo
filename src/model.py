@@ -73,15 +73,15 @@ class Demo(nn.Module):
         self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
         
         
-        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         
-        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
@@ -108,31 +108,31 @@ class Demo(nn.Module):
         
         return to_tensor(laplace_transform(propagation_graph)).to(device)
     
-    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
-        device = self.device
-
-        with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
-            birpartite_graph = pickle.load(f)
-            
-        if modification_ratio:
-            graph = birpartite_graph.tocoo()
-            values = np_edge_dropout(graph.data, modification_ratio)
-            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        
-        return to_tensor(birpartite_graph).to(device)
-    
     # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
     #     device = self.device
 
+    #     with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
+    #         birpartite_graph = pickle.load(f)
+            
     #     if modification_ratio:
     #         graph = birpartite_graph.tocoo()
     #         values = np_edge_dropout(graph.data, modification_ratio)
     #         birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-    #     bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-    #     birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
-        
     #     return to_tensor(birpartite_graph).to(device)
+    
+    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
+        device = self.device
+
+        if modification_ratio:
+            graph = birpartite_graph.tocoo()
+            values = np_edge_dropout(graph.data, modification_ratio)
+            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        
+        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        
+        return to_tensor(birpartite_graph).to(device)
     
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
@@ -167,10 +167,10 @@ class Demo(nn.Module):
             else:
                 feats = graph @ feats
 
-            # feats = self.dropout(feats)
+            feats = self.dropout(feats)
             # feats = feats + self.residual_coff * ini_feats
-            # neighbor_feats = self.cal_edge_weight(graph, feats, test)
-            # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            neighbor_feats = self.cal_edge_weight(graph, feats, test)
+            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             
             feats /= (i + 2)
             feats = F.normalize(feats, p=2, dim=1)
@@ -178,7 +178,7 @@ class Demo(nn.Module):
             all_feats.append(feats)
             
         all_feats = torch.stack(all_feats, dim=1)
-        all_feats = torch.mean(all_feats, dim=1)
+        all_feats = torch.sum(all_feats, dim=1)
         
         Afeat, Bfeat = torch.split(all_feats, (Afeat.shape[0], Bfeat.shape[0]), 0)
         
@@ -292,7 +292,7 @@ class Demo(nn.Module):
     def cal_c_loss(self, users, bundles, users_feat, bundles_feat):
         pos, neg = bundles[:, 0], bundles[:, 1]
         batch_pop, batch_unpop = split_batch_item(pos, self.bundle_freq)
-        
+
         batch_users = torch.unique(users).type(torch.LongTensor).to(self.device)
         batch_pop = torch.unique(batch_pop).type(torch.LongTensor).to(self.device)
         batch_unpop = torch.unique(batch_unpop).type(torch.LongTensor).to(self.device)
@@ -301,12 +301,12 @@ class Demo(nn.Module):
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         
         user_c_loss = InfoNCE(aff_users_feat[batch_users], hist_users_feat[batch_users], 0.2) * 0.2
-        
-        # bundle_c_pop = InfoNCE_i(aff_users_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
-        # bundle_c_unpop = InfoNCE_i(aff_users_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
-        bundle_c_pop = InfoNCE(aff_bundles_feat[batch_pop], hist_bundles_feat[batch_pop], 0.2) * 0.2
-        bundle_c_unpop = InfoNCE(aff_bundles_feat[batch_unpop], hist_bundles_feat[batch_unpop], 0.2) * 0.2
-        bundle_c_loss = (bundle_c_pop + bundle_c_unpop) * 0.2
+
+        bundle_c_pop = InfoNCE_i(aff_bundles_feat[batch_pop], hist_bundles_feat[batch_pop], hist_bundles_feat[batch_unpop], 0.2, 0.2)
+        bundle_c_unpop = InfoNCE_i(aff_bundles_feat[batch_unpop], hist_bundles_feat[batch_unpop], hist_bundles_feat[batch_pop], 0.2, 0.2)
+        # bundle_c_pop = InfoNCE(aff_bundles_feat[batch_pop], hist_bundles_feat[batch_pop], 0.2) * 0.2
+        # bundle_c_unpop = InfoNCE(aff_bundles_feat[batch_unpop], hist_bundles_feat[batch_unpop], 0.2) * 0.2
+        bundle_c_loss = (bundle_c_pop + bundle_c_unpop) / 2
         
         c_loss = user_c_loss + bundle_c_loss
         
@@ -341,8 +341,8 @@ class Demo(nn.Module):
         
     #     return total_loss
     def cal_cl_loss(self, idx, aug_graph_1, aug_graph_2):
-        u_idx = torch.unique(torch.Tensor(idx[0]).type(torch.long)).cuda()
-        b_idx = torch.unique(torch.Tensor(idx[1]).type(torch.long)).cuda()
+        u_idx = torch.unique(torch.Tensor(idx[0]).type(torch.long))
+        b_idx = torch.unique(torch.Tensor(idx[1]).type(torch.long))
         
         u_view_1, b_view_1 = self.one_propagate(aug_graph_1, self.users_feat, self.bundles_feat, True)
         u_view_2, b_view_2 = self.one_propagate(aug_graph_2, self.users_feat, self.bundles_feat, True)
@@ -393,8 +393,8 @@ class Demo(nn.Module):
         if ED_dropout:
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
             
-            # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
-            self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
 
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
@@ -412,7 +412,7 @@ class Demo(nn.Module):
         
         reg_loss = self.l2_reg_loss(self.l2_norm, self.users_feat[users], self.bundles_feat[bundles[:, 0]], self.bundles_feat[bundles[:, 1]])
         
-        return bpr_loss, au_loss, c_loss + reg_loss / len(users)
+        return bpr_loss, au_loss + cl_loss
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
