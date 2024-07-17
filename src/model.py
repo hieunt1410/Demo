@@ -152,7 +152,7 @@ class Demo(nn.Module):
         
         norm_adj = d_mat @ propagation_graph @ d_mat
         
-        return to_tensor(norm_adj).to(device)        
+        return to_tensor(norm_adj).to(device)
         
         
     def one_propagate(self, graph, Afeat, Bfeat, test):
@@ -375,8 +375,8 @@ class Demo(nn.Module):
         u_loss = (bundle_uniform + user_uniform)
         a_loss = (bundle_align + user_align)
         
-        aug_graph_1 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
-        aug_graph_2 = self.get_user_prop_graph(self.ub_graph, self.conf['hist_ed_ratio'])
+        aug_graph_1 = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
+        aug_graph_2 = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
         cl_loss = self.cal_cl_loss([users, bundles[:, 0]], aug_graph_1, aug_graph_2)
         
         return bpr_loss, a_loss, u_loss, cl_loss
