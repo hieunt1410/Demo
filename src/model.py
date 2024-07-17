@@ -412,7 +412,7 @@ class Demo(nn.Module):
         
         reg_loss = self.l2_reg_loss(self.l2_norm, self.users_feat[users], self.bundles_feat[bundles[:, 0]], self.bundles_feat[bundles[:, 1]])
         
-        return bpr_loss, au_loss, cl_loss + reg_loss / len(users)
+        return bpr_loss, au_loss, c_loss + reg_loss / len(users)
         
     def evaluate(self, propagate_result, users, psi=1):
         users_feat, bundles_feat = propagate_result
