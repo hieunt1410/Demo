@@ -27,7 +27,7 @@ Youshu:
 
 NetEase:
   data_path: '../data/all'
-  batch_size_train: 2048
+  batch_size_train: 4096
   batch_size_test: 2048
   topk: [10, 20, 40, 80]
   topk_valid: 20
@@ -39,7 +39,7 @@ NetEase:
   hist_ed_ratio: 0.3
   agg_ed_ratio: 0.1
 
-  residual_coff: 0.6
+  residual_coff: 0.3
 
   lr: 1.0e-3
   lambda2: 1.0e-4
