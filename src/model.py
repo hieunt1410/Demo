@@ -73,15 +73,15 @@ class Demo(nn.Module):
         self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
         
         
-        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         
-        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
@@ -108,31 +108,31 @@ class Demo(nn.Module):
         
         return to_tensor(laplace_transform(propagation_graph)).to(device)
     
-    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
-        device = self.device
-
-        with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
-            birpartite_graph = pickle.load(f)
-            
-        if modification_ratio:
-            graph = birpartite_graph.tocoo()
-            values = np_edge_dropout(graph.data, modification_ratio)
-            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
-        
-        return to_tensor(birpartite_graph).to(device)
-    
     # def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
     #     device = self.device
 
+    #     with open(self.conf['data_path'] + self.conf['dataset'] + 'bun_atten_graph.pkl', 'rb') as f:
+    #         birpartite_graph = pickle.load(f)
+            
     #     if modification_ratio:
     #         graph = birpartite_graph.tocoo()
     #         values = np_edge_dropout(graph.data, modification_ratio)
     #         birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
         
-    #     bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
-    #     birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
-        
     #     return to_tensor(birpartite_graph).to(device)
+    
+    def get_aggregation_graph(self, birpartite_graph, modification_ratio=0):
+        device = self.device
+
+        if modification_ratio:
+            graph = birpartite_graph.tocoo()
+            values = np_edge_dropout(graph.data, modification_ratio)
+            birpartite_graph = sp.coo_matrix((values, (graph.row, graph.col)), shape=graph.shape).tocsr()
+        
+        bundle_sz = birpartite_graph.sum(axis=1) + 1e-8
+        birpartite_graph = sp.diags(1/bundle_sz.A.ravel()) @ birpartite_graph
+        
+        return to_tensor(birpartite_graph).to(device)
     
     
     def get_user_prop_graph(self, bipartite_graph, modification_ratio=0):
@@ -167,10 +167,10 @@ class Demo(nn.Module):
             else:
                 feats = graph @ feats
 
-            # feats = self.dropout(feats)
+            feats = self.dropout(feats)
             # feats = feats + self.residual_coff * ini_feats
-            # neighbor_feats = self.cal_edge_weight(graph, feats, test)
-            # feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
+            neighbor_feats = self.cal_edge_weight(graph, feats, test)
+            feats = neighbor_feats + self.residual_coff * (feats - ini_feats)
             
             feats /= (i + 2)
             feats = F.normalize(feats, p=2, dim=1)
@@ -393,8 +393,8 @@ class Demo(nn.Module):
         if ED_dropout:
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
             
-            # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
-            self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
 
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
