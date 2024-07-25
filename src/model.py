@@ -73,15 +73,15 @@ class Demo(nn.Module):
         self.ub_graph, self.ui_graph, self.bi_graph = raw_graph
         
         
-        self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
-        # self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
+        # self.UI_propagation_graph_ori = self.get_propagation_graph(self.ui_graph)
+        self.UI_propagation_graph_ori = self.get_user_prop_graph(self.ui_graph)
         
         self.UB_propagation_graph_ori = self.get_propagation_graph(self.ub_graph)
        
         self.BI_aggregation_graph_ori = self.get_aggregation_graph(self.bi_graph)
         
-        self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
-        # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
+        # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, conf['aff_ed_ratio'])
+        self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, conf['aff_ed_ratio'])
         
         self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, conf['agg_ed_ratio'])
         
@@ -262,10 +262,10 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):       
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, False)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
             
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph, self.users_feat, self.bundles_feat, False)
+            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
@@ -393,8 +393,8 @@ class Demo(nn.Module):
         if ED_dropout:
             self.UB_propagation_graph = self.get_propagation_graph(self.ub_graph, self.conf['hist_ed_ratio'])
             
-            self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
-            # self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            # self.UI_propagation_graph = self.get_propagation_graph(self.ui_graph, self.conf['aff_ed_ratio'])
+            self.UI_propagation_graph = self.get_user_prop_graph(self.ui_graph, self.conf['aff_ed_ratio'])
 
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
