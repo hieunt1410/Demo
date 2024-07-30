@@ -50,6 +50,3 @@ def get_ndcg(pred, grd, is_hit, topk):
     nomina = ndcg.sum().item()
     
     return [nomina, denorm]
-
-if __name__ == "__main__":
-    main()

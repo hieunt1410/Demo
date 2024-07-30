@@ -21,10 +21,13 @@ def get_cmd():
     parser.add_argument('--data', '-d', type=str, default='Youshu', help='dataset name')
     parser.add_argument('--model', '-m', type=str, default='BPR', help='model name')
     parser.add_argument('--type', '-t', type=str, default='cold', help='train or test')
-    
+    parser.add_argument('--cont', '-c', type=str, default='no', help='continue training')
     args = parser.parse_args()
     
     return args
+
+def load_model():
+    pass
 
 def main():
     conf = yaml.safe_load(open('../configs/config.yaml', 'r'))
@@ -54,6 +57,9 @@ def main():
     gen_bun_attention_graph(dataset, conf['data_path'] + dataset_name + 'bun_atten_graph.pkl')
     
     model = Demo(conf, dataset.graphs, dataset.bundles_freq).to(device)
+    if params['cont'] == 'yes':
+        model.load_state_dict(torch.load(f'../models/{conf["model"]}_{conf["dataset"]}.pth')).to(device)
+        
     optimizer = optim.Adam(model.parameters(), lr=conf['lr'], weight_decay=conf['lambda2'])
     topk_ = conf['topk_valid']
     best_vld_rec, best_vld_ndcg, best_content = 0, 0, ''

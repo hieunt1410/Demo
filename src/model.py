@@ -262,10 +262,10 @@ class Demo(nn.Module):
     
     def propagate(self, test=False):       
         if test:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph_ori, self.users_feat, self.bundles_feat, False)
             
         else:
-            UB_users_feat, UB_bundles_feat = self.one_propagate(self.UB_propagation_graph, self.users_feat, self.bundles_feat, test)
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(self.UB_propagation_graph, self.users_feat, self.bundles_feat, False)
             
         if test:
             UI_users_feat, UI_items_feat = self.one_propagate(self.UI_propagation_graph_ori, self.users_feat, self.items_feat, test)
@@ -276,10 +276,21 @@ class Demo(nn.Module):
                         
         UI_bundles_feat = self.one_aggregate(UI_items_feat, test)
         
+        UB_recons_graph = UB_users_feat @ UB_bundles_feat.T
+        UB_recons_graph = (UB_recons_graph * (UB_recons_graph > 0))
+        UB_recons_graph = UB_recons_graph.detach().cpu().numpy()
+        
+        UB_recons_propagation_graph = self.get_propagation_graph(UB_recons_graph)
+        
+        if test:
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(UB_recons_propagation_graph, self.users_feat, self.bundles_feat, test)
+        else:
+            UB_users_feat, UB_bundles_feat = self.one_propagate_(UB_recons_propagation_graph, self.users_feat, self.bundles_feat, test)
+        
         aff_users_rep, aff_bundles_rep = UI_users_feat, UI_bundles_feat
         hist_users_rep, hist_bundles_rep = UB_users_feat, UB_bundles_feat
         
-        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep]
+        return [aff_users_rep, hist_users_rep], [aff_bundles_rep, hist_bundles_rep], UB_recons_propagation_graph
             
     def cal_a_loss(self, x, y):
         x, y = F.normalize(x, p=2, dim=1), F.normalize(y, p=2, dim=1)       
@@ -399,7 +410,7 @@ class Demo(nn.Module):
             self.BI_aggregation_graph = self.get_aggregation_graph(self.bi_graph, self.conf['agg_ed_ratio'])
         
         users, bundles = batch
-        users_feat, bundles_feat = self.propagate()
+        users_feat, bundles_feat, UB_recons_propagation_graph = self.propagate()
         
         users_embedding = [i[users].expand(-1, bundles.shape[1], -1) for i in users_feat]
         bundles_embedding = [i[bundles] for i in bundles_feat]
@@ -407,15 +418,16 @@ class Demo(nn.Module):
         bundles_gamma = bundles_gamma[bundles.flatten()].reshape(bundles.shape)
                                                                 
         bpr_loss, a_loss, u_loss, cl_loss = self.cal_loss(users, bundles, users_embedding, bundles_embedding, bundles_gamma)
-        c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
+        # c_loss = self.cal_c_loss(users, bundles, users_feat, bundles_feat)
         au_loss = a_loss + u_loss
         
-        reg_loss = self.l2_reg_loss(self.l2_norm, self.users_feat[users], self.bundles_feat[bundles[:, 0]], self.bundles_feat[bundles[:, 1]])
+        # reg_loss = self.l2_reg_loss(self.l2_norm, self.users_feat[users], self.bundles_feat[bundles[:, 0]], self.bundles_feat[bundles[:, 1]])
+        recons_graph = torch.mean((UB_recons_propagation_graph - self.UB_propagation_graph) ** 2)
         
-        return bpr_loss, au_loss + cl_loss
+        return bpr_loss, au_loss + cl_loss + recons_graph
         
     def evaluate(self, propagate_result, users, psi=1):
-        users_feat, bundles_feat = propagate_result
+        users_feat, bundles_feat, _ = propagate_result
         aff_users_feat, hist_users_feat = [i[users] for i in users_feat]
         aff_bundles_feat, hist_bundles_feat = bundles_feat
         bundle_gamma = torch.tanh(self.bundle_freq / psi)
@@ -424,3 +436,52 @@ class Demo(nn.Module):
         scores = aff_users_feat @ aff_bundles_feat_.T + hist_users_feat @ hist_bundles_feat_.T
         
         return scores
+    
+class AutoEncoder(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_hidden):
+        super(AutoEncoder, self).__init__()
+        enc_dims = self.generate_dims(input_dim, hidden_dim, output_dim, n_hidden)
+        dec_dims = self.generate_dims(output_dim, hidden_dim, input_dim, n_hidden)
+        
+        self.encoder = self.setup_layers(enc_dims, 'tanh')
+        self.decoder = self.setup_layers(dec_dims, 'tanh')    
+        self.encoder.apply(self.init_weights)
+        self.decoder.apply(self.init_weights)    
+        
+    def generate_dims(self, input_dim, hidden_dim, output_dim, n_hidden):
+        dims = [input_dim]
+        dims += [hidden_dim] * n_hidden
+        dims += [output_dim]
+        
+        return dims
+    
+    def get_activation(self, hidden_activation):
+        if hidden_activation == 'tanh':
+            return nn.Tanh()
+        elif hidden_activation == 'relu':
+            return nn.ReLU()
+        elif hidden_activation == 'sigmoid':
+            return nn.Sigmoid()
+        else:
+            return nn.Identity()
+    
+    def init_weights(self, m):
+        if type(m) == nn.Linear:
+            nn.init.xavier_normal_(m.weight)
+            nn.init.zeros_(m.bias)
+        
+    def setup_layers(self, dims, hidden_activation, dropout=0.0):
+        layers = []
+        for i in range(1, len(dims)):
+            layers.append(nn.Linear(dims[i-1], dims[i]))
+            layers.append(self.get_activation(hidden_activation))
+            if dropout:
+                layers.append(nn.Dropout(dropout))
+                
+        return nn.Sequential(*layers)
+    
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        
+        return x
